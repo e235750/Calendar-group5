@@ -1,0 +1,41 @@
+{% extends 'common/layout.html' %}
+{% block style %}<link rel="stylesheet" href="../static/css/style.css">{% endblock%}
+{% block script %}<script src="../static/js/script.js"　></script>{% endblock %}
+{% block content %}
+    <div class="l-reverse">
+        <nav class="l-reverse__nav">
+            <h2>ちのじょカレンダー</h2>
+        </nav>
+        <div class="l-reverse__body">
+            <nav class="l-reverse__localNav">
+                <h2>最近の更新</h2>
+                <ul>
+                    <li>item</li>
+                    <li>item</li>
+                    <li>item</li>
+                </ul>
+            </nav>
+            <div class="c-box l-reverse__content">  
+                <h2 class="date"><span id="year">2024</span>年<span id="month">1</span>月</h2>
+                <div class="transition">
+                    <button id="today" type="button">今日</button>
+                    <button id="last-month" type="button">＜</button>
+                    <button id="next-month" type="button">＞</button>
+                </div>
+                <table class="calendar"></table>
+
+                <!-- <div class="rule">
+                    <h2>＊つかいかた</h2>
+                    <div id="description">
+                        <ul>
+                            <li><p>共有スケジュールは利用者みんなが利用できるものです</p></li>
+                            <li><p>ウソや不適切な内容を追加しないようにしましょう</p></li>
+                            <li><p>講義情報や課題の情報を追加してくれたら誰かが喜びます</p></li>
+                            <li><p>とにかくなんでもいいのでスケジュールを追加しましょう</p></li>
+                        </ul>
+                    </div>
+                </div> -->
+            </div>
+        </div>
+    </div>
+{% endblock %}

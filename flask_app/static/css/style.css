@@ -1,0 +1,325 @@
+body {
+  font-family: "Noto Sans JP", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  color: #333;
+}
+
+.l-reverse__nav {
+    position: relative;
+    padding: 5px 0;
+    background-color: #FFDBC9;
+    height: 4vh;;
+    border-radius: 3px;
+}
+.l-reverse__nav h2 {
+    position: absolute;
+    bottom: -10%;
+    left: 5%;
+    font-size: 20px;
+    color: #FF6928;
+}
+.l-reverse__body {
+    display: flex;
+    margin: 10px 0;
+}
+.l-reverse__localNav {
+    flex: 0.75;
+    position: relative;
+    padding-top: 40px;
+    text-align: center;
+    background-color: #FFDBC9;
+    border-radius: 3px;
+}
+.l-reverse__localNav h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #FF6928;
+}
+.l-reverse__content {
+    position: relative;
+    flex: 3;
+    margin-left: 10px;
+    height: 90vh;
+}
+
+.date {
+    position: relative;
+    font-size: 35px;
+    top: 0;
+}
+
+.transition {
+    position: relative;
+    left: 85%;
+    transform: translateX(-35%);
+    top: -8%;
+    font-size: 25px;
+    width: 160px;
+}
+button {
+    border-radius: 5px;
+    outline: none;
+    border: none;
+    box-sizing: none;
+}
+#last-month {
+    padding: 5.5px 10px;
+    margin: 0;
+    font-size: 20px;
+    background-color: #fff;
+    border-radius: 100px;
+}
+#last-month:hover {
+    transition-duration: 250ms;
+    background-color: #FFDBC9;
+}
+#today {
+    padding: 8px 9px;
+    margin: 0;
+    font-size: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+}
+#today:hover {
+    transition-duration: 250ms;
+    background-color: #FFDBC9;
+}
+#next-month {
+    padding: 5.5px 10px;
+    margin: 0;
+    font-size: 20px;
+    background-color: #fff;
+    border-radius: 100px;
+}
+#next-month:hover {
+    transition-duration: 250ms;
+    background-color: #FFDBC9;
+}
+
+.calendar {
+    position: absolute;
+    width: 100%;
+    top: 10%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+td,th {
+    padding: 0;
+    text-align: center;
+    border-bottom:1px solid #FF9999;
+    border-right:1px dotted #FF9999;
+}
+.exi {
+    position: relative;
+    width: 30px;
+    height: 100px;
+}
+td:first-child {
+    color: #FF3333;
+}
+td:last-child {
+    color: #33CCCC;
+    border-right: 0;
+}
+.date-num {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    font-size: 15px;
+}
+th{ /* 表の見出しの指定 */
+    color:#FF9999;
+    padding: 30px 35px;
+  }
+tr:first-child {
+    border-bottom: 2px solid #FF9999;
+}
+tr:last-child {
+    border-bottom: 2px solid #FF9999;
+}
+th:first-child {
+    color: #FF3333;
+}
+th:last-child {
+    color: #33CCCC;
+    border-right: 0;
+}
+.rule {
+    position: absolute;
+    top: 73%;
+    left: 10%;
+}
+.rule h2 {
+    position: relative;
+    top: 10%;
+    left: 30%;
+    width: 550px;
+    color: #FF6928;
+}
+#description {
+    position: relative;
+    font-size: 20px;
+    width: 600px;
+}
+#description p {
+    margin: 10px 0;
+}
+
+/* 追加フォーム */
+.add-form {
+    position: absolute;
+    width: 350px;
+    height: 300px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 10px 5px 30px #999;
+    z-index: 100;
+  }
+  
+  .tab {
+    position: absolute;
+    width: 100%;
+    height: 10%;
+    background-color: #EEEEEE;
+    border-radius: 5px 5px 0 0;
+  }
+  #add-content {
+    position: absolute;
+    font-size: 13px;
+    top: 20%;
+    left: 3%;
+    color: #333;
+  }
+  #back {
+    position: absolute;
+    top: -8%;
+    right: 2.5%;
+    font-size: 20px;
+    color: #666;
+    border-radius: 5px;
+  }
+  #back:hover {
+    transition-duration: 250ms;
+    color: #333;
+  }
+  #title {
+    position: absolute;
+    top: 19%;
+    left: 10%;
+    width: 80%;
+    border: none;
+    box-sizing: none;
+    outline: none;
+    border-bottom: 1.5px solid #EEEEEE;
+    font-size: 22px;
+    caret-color: #2C7CFF;
+  }
+  #title:focus {
+    transition-duration: 500ms;
+    border-bottom: 1.5px solid #4689FF;
+  }
+  
+  #time {
+    position: absolute;
+    top: 36%;
+    left: 10%;
+    width: 75%;
+  }
+  .period {
+    position: absolute;
+    width: 120px;
+    border: none;
+    box-sizing: none;
+    outline: none;
+    border-bottom: 1.5px solid #EEEEEE;
+    font-size: 10px;
+    color: #777;
+    caret-color: #2C7CFF;
+    padding: 9px;
+    border-radius: 2px;
+  }
+  .period:hover {
+    transition-duration: 250ms;
+    background-color: #EEEEEE;
+  }
+  .period:focus {
+    transition-duration: 500ms;
+    border-bottom: 1.5px solid #4689FF;
+  }
+  #start {
+    left: 0;
+  }
+  #end {
+    left: 57%;
+  }
+  #separator {
+    position: absolute;
+    left: 52.85%;
+    top: 5px;
+    font-size: 17px;
+    color: #888;
+  }
+  
+  #options {
+    position: absolute;
+    top: 55%;
+    width: 70%;
+    color: #555;
+  }
+  #shared-option {
+    position: absolute;
+    left: 14%;
+    border-bottom: 1.5px solid #EEEEEE;
+    padding: 8px;
+    border-radius: 2px;
+  }
+  #none-shared-option {
+    position: absolute;
+    left: 48%;
+    border-bottom: 1.5px solid #EEEEEE;
+    padding: 8px;
+    border-radius: 2px;
+  }
+  
+  #shared-option:hover {
+    transition-duration: 250ms;
+    background-color: #EEEEEE;
+    border-bottom: 1.5px solid #4689FF;
+  }
+  #none-shared-option:hover {
+    transition-duration: 500ms;
+    background-color: #EEEEEE;
+    border-bottom: 1.5px solid #4689FF;
+  }
+  
+  #select {
+    position: absolute;
+    top: 83%;
+    width: 100%;
+    border-radius: 2px;
+  }
+  #cancel {
+    position: absolute;
+    left: 47%;
+    padding: 8px;
+    border-radius: 5px;
+    color: #555;
+  }
+  #cancel:hover {
+    transition-duration: 250ms;
+    background-color: #EEEEEE;
+  }
+  #add {
+    position: absolute;
+    left: 76%;
+    padding: 8px 18px;
+    border-radius: 3px;
+    color: #FFF;
+    background-color: #2C7CFF;
+  }
+  #add:hover {
+    transition-duration: 250ms;
+    background-color: #005FFF;
+  }
