@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+//カレンダーセット
 function setCalendar(year, month) {
     fetch(`/get_calendar?year=${year}&month=${month}`)
     .then(response => response.json())
@@ -79,27 +80,16 @@ function setCalendar(year, month) {
         calendarTable.innerHTML = data.html;
 
         document.querySelectorAll(".exi").forEach((elm) => {
-            elm.addEventListener("click", createAddForm);
+            elm.addEventListener("click", setAddForm);
         });
-        // calendarTable.innerHTML = `
-        //     <tr>
-        //         <th>日</th>
-        //         <th>月</th>
-        //         <th>火</th>
-        //         <th>水</th>
-        //         <th>木</th>
-        //         <th>金</th>
-        //         <th>土</th>
-        //     </tr>`;
-        // // Insert the new calendar rows
-        // calendarTable.insertAdjacentHTML("beforeend", data.html);
     })
     .catch(error => {
         console.error("Error", error)
     });
 }
 
-function createAddForm(event) {
+//追加フォームセット
+function setAddForm(event) {
     let curX = event.pageX;
     let curY = event.pageY;
     const margin = 25;
@@ -129,10 +119,10 @@ function createAddForm(event) {
         //キャンセル時のフォーム消去 
         form.querySelector("#cancel").addEventListener("click", () => {
             form.remove();
-        })
+        });
         form.querySelector("#back").addEventListener("click", () => {
             form.remove();
-        })
+        });
 
         //フォーム以外をクリックしたらフォームを削除する
         document.addEventListener("click", (event) => {
@@ -150,9 +140,110 @@ function createAddForm(event) {
                     document.querySelector(".add-form").remove();
                 }
             }
-        })
+        });
+
+        const add = document.querySelector("#add");
+        add.addEventListener("click", () => {
+            const title = document.querySelector("#title");
+            const start = document.querySelector("#start");
+            const end = document.querySelector("#end");
+            const date = new Date();
+            let caution = false;
+            
+            if(title.value.length === 0) {
+                document.querySelector("#title-caution").style.display = "block";
+                caution = true;
+            }
+            else {
+                document.querySelector("#title-caution").style.display = "none";
+            }
+            if(title.value.length > 100) {
+                document.querySelector("#length-caution").style.display = "block";
+                const slicedStr = title.value.slice(0, 100);
+                title.value = slicedStr;
+                caution = true;
+            }
+            else {
+                document.querySelector("#length-caution").style.display = "none";
+            }
+            if(checkPeriod(start.value) && checkPeriod(end.value)) {
+                document.querySelector("#period-caution").style.display = "none";
+            }
+            else {
+                document.querySelector("#period-caution").style.display = "block";
+                caution = true; 
+            }
+            if(caution) return;
+            const titleText = title.value;
+            periodS = splitDateTime(start.value);
+            periodE = splitDateTime(end.value);
+            let sharedOption
+            //共有設定取得
+            form.querySelectorAll(".shared-options").forEach((elm) => {
+                if(elm.checked) {
+                    sharedOption = elm.value;
+                }
+            })
+            
+            const scheduleData = {
+                "title": titleText,
+                "start_time": periodS,
+                "end_time": periodE,
+                "added_date": {
+                                "year": date.getFullYear(),
+                                "month": date.getMonth() + 1,
+                                "day":  date.getDate(),
+                                "hour": date.getHours(),
+                                "minute": date.getMinutes(),
+                            },
+            }
+            postScheduleData(scheduleData, Number(sharedOption))
+        });
     })
     .catch(error => {
         console.error("Error", error)
     });
 }
+
+function postScheduleData(data, shared) {
+    let url;
+    if(shared) url = "/set_shared_schedule";
+    else url = "/set_none_shared_schedule";
+
+    const options = {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify(data),
+    };
+
+    fetch(url, options)
+    .then(response => {
+        if(!response.ok) {
+            throw new Error("Error", response.statusText)
+        }
+        return response.json
+    })
+    .then(data => {
+        console.log("Success", data)
+    })
+    .catch(error => {
+        console.error("Error", error);
+    })
+}
+
+//引数はYY-MM-DDThh:mm形式
+function splitDateTime(dateTime) {
+    const [date, time] = dateTime.split("T");
+    const [year, month, day] = date.split("-");
+    const [hour, minute] = time.split(":");
+
+    return {"year": year, "month": month, "day": day, "hour": hour, "minute": minute};
+}
+function checkPeriod(period) {
+    const reg = new RegExp("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
+    if(period == "" || reg.test(period) == -1) return false;
+    return true;
+}
+

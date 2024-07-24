@@ -6,6 +6,7 @@ body {
   color: #333;
 }
 
+/* 逆L字レイアウト */
 .l-reverse__nav {
     position: relative;
     padding: 5px 0;
@@ -98,6 +99,7 @@ button {
     background-color: #FFDBC9;
 }
 
+/* カレンダー */
 .calendar {
     position: absolute;
     width: 100%;
@@ -146,28 +148,8 @@ th:last-child {
     color: #33CCCC;
     border-right: 0;
 }
-.rule {
-    position: absolute;
-    top: 73%;
-    left: 10%;
-}
-.rule h2 {
-    position: relative;
-    top: 10%;
-    left: 30%;
-    width: 550px;
-    color: #FF6928;
-}
-#description {
-    position: relative;
-    font-size: 20px;
-    width: 600px;
-}
-#description p {
-    margin: 10px 0;
-}
 
-/* 追加フォーム */
+/* スケジュール追加フォーム */
 .add-form {
     position: absolute;
     width: 350px;
@@ -282,7 +264,6 @@ th:last-child {
     padding: 8px;
     border-radius: 2px;
   }
-  
   #shared-option:hover {
     transition-duration: 250ms;
     background-color: #EEEEEE;
@@ -293,7 +274,28 @@ th:last-child {
     background-color: #EEEEEE;
     border-bottom: 1.5px solid #4689FF;
   }
-  
+
+  /* バリデーション */
+  #caution {
+    position: absolute;
+    font-size: 12px;
+    top: 69%;
+    left: -2.5%;
+  }
+  #caution ul {
+    color: #FF3333;
+    list-style: none;
+  }
+  #length-caution {
+    display: none;
+  }
+  #period-caution {
+    display: none;
+  }
+  #title-caution {
+    display: none;
+  }
+
   #select {
     position: absolute;
     top: 83%;
