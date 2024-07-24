@@ -97,6 +97,11 @@ function setAddForm(event) {
     fetch("/get_add_form")
     .then(response => response.json())
     .then(data => {
+        document.querySelectorAll(".exi").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        if(document.querySelector(".add-form")) document.querySelector(".add-form").remove();
+        
         let parser = new DOMParser();
         let doc = parser.parseFromString(data.html, "text/html");
         let addForm = doc.body.firstChild;
@@ -119,9 +124,15 @@ function setAddForm(event) {
         //キャンセル時のフォーム消去 
         form.querySelector("#cancel").addEventListener("click", () => {
             form.remove();
+            document.querySelectorAll(".exi").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
         });
         form.querySelector("#back").addEventListener("click", () => {
             form.remove();
+            document.querySelectorAll(".exi").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
         });
 
         //フォーム以外をクリックしたらフォームを削除する
@@ -138,9 +149,14 @@ function setAddForm(event) {
                 }
                 if(!isForm) {
                     document.querySelector(".add-form").remove();
+                    document.querySelectorAll(".exi").forEach((elm) => {
+                        elm.style.pointerEvents = "auto";
+                    });
                 }
             }
         });
+
+        dragAndDrop();
 
         const add = document.querySelector("#add");
         add.addEventListener("click", () => {
@@ -232,6 +248,54 @@ function postScheduleData(data, shared) {
         console.error("Error", error);
     })
 }
+
+function dragAndDrop() {
+    const tab = document.querySelector(".drag-and-drop");
+    tab.addEventListener("mousedown", mdown, false);
+
+    let x, y;
+
+    function mdown(e) {
+        const form = document.querySelector(".add-form");
+        form.classList.add("drag");
+
+        // マウスの位置とフォームの位置の差分を計算
+        x = e.clientX - form.offsetLeft;
+        y = e.clientY - form.offsetTop;
+
+        document.body.addEventListener("mousemove", mmove, false);
+        document.body.addEventListener("mouseup", mup, false);
+    }
+
+    function mmove(e) {
+        const drag = document.querySelector(".drag");
+        const form = document.querySelector(".add-form");
+
+        e.preventDefault();
+
+        // マウスの移動に合わせてフォームを移動
+        let Y = e.clientY - y;
+        let X = e.clientX - x;
+        if(X < 0) X = 0;
+        if(X + form.clientWidth > document.body.clientWidth) X = document.body.clientWidth - form.clientWidth;
+        if(Y < 0) Y = 0;
+        if(Y + form.clientHeight> document.body.clientHeight) Y = document.body.clientHeight - form.clientHeight;
+        drag.style.top = Y + "px";
+        drag.style.left = X + "px";
+    }
+
+    function mup() {
+        const drag = document.querySelector(".drag");
+
+        document.body.removeEventListener("mousemove", mmove, false);
+        document.body.removeEventListener("mouseup", mup, false);
+
+        drag.classList.remove("drag");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", dragAndDrop);
+
 
 //引数はYY-MM-DDThh:mm形式
 function splitDateTime(dateTime) {

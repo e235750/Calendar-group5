@@ -181,6 +181,7 @@ th:last-child {
     font-size: 20px;
     color: #666;
     border-radius: 5px;
+    cursor: pointer;
   }
   #back:hover {
     transition-duration: 250ms;
@@ -324,4 +325,12 @@ th:last-child {
   #add:hover {
     transition-duration: 250ms;
     background-color: #005FFF;
+  }
+
+  .drag-and-drop {
+    cursor: move;
+  }
+
+  .drag {
+    z-index: 101;
   }

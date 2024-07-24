@@ -69,9 +69,9 @@ def get_add_form():
     #スケジュル追加フォーム
     html = """
             <div class="add-form">
-                <div class="tab"><span id="add-content">スケジュールの追加</span><span id="back">×</span></div>
+                <div class="tab drag-and-drop"><span id="add-content">スケジュールの追加</span><span id="back">×</span></div>
                 <input type="text" id="title" placeholder="タイトルを追加">
-                <div id="time"><input type="datetime-local" class="period" id="start"><span id="separator">–</span><input type="datetime-local" class="period" id="end"></div>
+                <div id="time"><input type="datetime-local" class="period" id="start" min="2023-04-01T00:00" max="2027-03-31T23:59"><span id="separator">–</span><input type="datetime-local" class="period" id="end" min="2023-04-01T00:00" max="2027-03-31T23:59"></div>
                 <div id="options">
                     <div id="shared-option">
                     <input type="radio" id="shared" class="shared-options" name="shared-options" value="1" checked/>
