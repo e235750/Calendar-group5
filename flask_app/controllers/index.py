@@ -48,13 +48,13 @@ def create_calendar(_year=-1, _month=-1):
         if month_data["first_day"] == 6:
             #月の範囲を超えているか
             if day+1 <= month_data["month_range"]:
-                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day+1}</div></td>"
+                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day+1}</div><ul class='schedule-list'></ul></td>"
             else:
                 html += "<td></td>"
         else:
             #月の範囲内か
             if day > month_data["first_day"] and day - month_data["first_day"] <= month_data["month_range"]:
-                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day - month_data['first_day']}</div></td>"
+                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day - month_data['first_day']}</div><ul class='schedule-list'></ul></td>"
             else:
                 html += "<td></td>"
         #週の最後か
@@ -105,6 +105,30 @@ def get_calendar():
     calendar_data = create_calendar(year, month)
     return jsonify(calendar_data)
 
+#レスポンスからスケジュールデータ作成
+def create_schedule_data(data):
+    start_time = data.get("start_time", {})
+    end_time = data.get("end_time", {})
+    added_date = data.get("added_date", {})
+    def convert_time(time_dict):
+        return [
+            int(time_dict.get("year")),
+            int(time_dict.get("month")),
+            int(time_dict.get("day")),
+            int(time_dict.get("hour")),
+            int(time_dict.get("minute"))
+        ]
+    start_time = convert_time(start_time)
+    end_time = convert_time(end_time)
+    added_date = convert_time(added_date)
+
+    start_time_dt = datetime.datetime(*start_time)
+    end_time_dt = datetime.datetime(*end_time)
+    added_date_dt = datetime.datetime(*added_date)
+
+    return {"start_time_dt": start_time_dt, "end_time_dt": end_time_dt, "added_date_dt": added_date_dt}
+
+
 #共有スケジュールの登録
 @index_bp.route("/set_shared_schedule", methods=["POST"])
 def set_shared_schedule():
@@ -148,28 +172,42 @@ def set_none_shared_schedule():
 
     return jsonify({"response": "非共有スケジュール登録"})
 
-#レスポンスからスケジュールデータ作成
-def create_schedule_data(data):
-    start_time = data.get("start_time", {})
-    end_time = data.get("end_time", {})
-    added_date = data.get("added_date", {})
-    def convert_time(time_dict):
-        return [
-            int(time_dict.get("year")),
-            int(time_dict.get("month")),
-            int(time_dict.get("day")),
-            int(time_dict.get("hour")),
-            int(time_dict.get("minute"))
-        ]
-    start_time = convert_time(start_time)
-    end_time = convert_time(end_time)
-    added_date = convert_time(added_date)
-
-    start_time_dt = datetime.datetime(*start_time)
-    end_time_dt = datetime.datetime(*end_time)
-    added_date_dt = datetime.datetime(*added_date)
-
-    return {"start_time_dt": start_time_dt, "end_time_dt": end_time_dt, "added_date_dt": added_date_dt}
+#日時の分割
+def date_split(datetime):
+    date, time = datetime.split()
+    year, month, day = date.split('-')
+    hour, minute, second = time.split(':')
+    
+    return {"year": int(year), "month": int(month), "day": int(day), "hour": int(hour), "minute": int(minute)}
+    
+#共有スケジュールから月のスケジュールを取得する
+@index_bp.route("/get_monthly_shared_schedule", methods=["GET"])
+def get_monthly_shared_schedule():
+    schedule = db.session.query(SharedSchedule).all()
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    response = []
+    def create_response(schedule):
+        response = {
+            "schedule_id": schedule.schedule_id,
+            "title"     : schedule.title,
+            "start_time": date_split(str(schedule.start_time)),
+            "end_time"  : date_split(str(schedule.end_time)),
+            "added_date": date_split(str(schedule.added_date)),
+        }
+        return response
+    
+    month_start = datetime.datetime(year, month, day=1, hour=0, minute=0)
+    month_end = datetime.datetime(year, month, day=calendar.monthrange(year, month)[1], hour=23, minute=59, second=59)
+    for s in schedule:
+        start_time_dt = date_split(str(s.start_time))
+        end_time_dt = date_split(str(s.start_time))
+        start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
+        end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
+        #まるまる入っている、前月をまたぐ、後月をまたぐ
+        if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time):
+            response.append(create_response(s))
+    return jsonify({"response": response})
 
 @index_bp.route("/", methods=["GET", "POST"])
 def index():

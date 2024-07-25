@@ -82,6 +82,26 @@ function setCalendar(year, month) {
         document.querySelectorAll(".exi").forEach((elm) => {
             elm.addEventListener("click", setAddForm);
         });
+
+        return getMonthlySharedSchedule(year, month);
+    })
+    .then(scheduleData => {
+        // scheduleData.forEach((elm) => {
+        //     const datetime = elm.start_time
+        //     const startDay = Number(datetime["day"]);
+        //     const td = document.querySelector(`#td-${day}`);
+        //     const ul = td.querySelector("ul");
+        //     const li = document.createElement("li");
+        //     li.classList.add("shared");
+        //     let titleText = elm.title;
+        //     if(titleText.length > 6) {
+        //         titleText = titleText.slice(0,6);
+        //         titleText += "...";
+        //     }
+        //     li.textContent = titleText;
+        //     ul.appendChild(li);
+        // })
+        console.log(scheduleData);
     })
     .catch(error => {
         console.error("Error", error)
@@ -94,9 +114,12 @@ function setAddForm(event) {
     let curY = event.pageY;
     const margin = 25;
 
+    getMonthlySharedSchedule(2024, 7)
+
     fetch("/get_add_form")
     .then(response => response.json())
     .then(data => {
+        //フォームがでている間は日付のクリックイベントを無効にする
         document.querySelectorAll(".exi").forEach((elm) => {
             elm.style.pointerEvents = "none";
         });
@@ -156,16 +179,34 @@ function setAddForm(event) {
             }
         });
 
+        const start = document.querySelector("#start");
+        const end = document.querySelector("#end");
+
+        //start(end)よりも後(前)の日時を設定できないようにする
+        start.addEventListener("change", () => {
+            const startDate = new Date(start.value);
+
+            if(!isNaN(startDate.getTime())) {
+                end.min = start.value;
+            }
+        })
+        end.addEventListener("change", () => {
+            const endDate = new Date(end.value);
+
+            if(!isNaN(endDate.getTime())) {
+                start.max = end.value;
+            }
+        })
+
         dragAndDrop();
 
         const add = document.querySelector("#add");
         add.addEventListener("click", () => {
             const title = document.querySelector("#title");
-            const start = document.querySelector("#start");
-            const end = document.querySelector("#end");
             const date = new Date();
             let caution = false;
             
+            //タイトルの長さ検証
             if(title.value.length === 0) {
                 document.querySelector("#title-caution").style.display = "block";
                 caution = true;
@@ -182,6 +223,7 @@ function setAddForm(event) {
             else {
                 document.querySelector("#length-caution").style.display = "none";
             }
+            //期間設定の有無を検証
             if(checkPeriod(start.value) && checkPeriod(end.value)) {
                 document.querySelector("#period-caution").style.display = "none";
             }
@@ -190,6 +232,7 @@ function setAddForm(event) {
                 caution = true; 
             }
             if(caution) return;
+            
             const titleText = title.value;
             periodS = splitDateTime(start.value);
             periodE = splitDateTime(end.value);
@@ -214,6 +257,10 @@ function setAddForm(event) {
                             },
             }
             postScheduleData(scheduleData, Number(sharedOption))
+            form.remove()
+            document.querySelectorAll(".exi").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
         });
     })
     .catch(error => {
@@ -221,6 +268,7 @@ function setAddForm(event) {
     });
 }
 
+//スケジュールデータの送信
 function postScheduleData(data, shared) {
     let url;
     if(shared) url = "/set_shared_schedule";
@@ -249,6 +297,20 @@ function postScheduleData(data, shared) {
     })
 }
 
+//指定年月の共有スケジュール情報を取得
+function getMonthlySharedSchedule(year, month) {
+    return fetch(`/get_monthly_shared_schedule?year=${year}&month=${month}`)
+    .then(response => response.json())
+    .then(data => {
+        return data.response
+    })
+    .catch(error => {
+        console.error("Error", error)
+        throw error
+    });
+}
+
+//フォームのドラッグ&ドロップを可能にする
 function dragAndDrop() {
     const tab = document.querySelector(".drag-and-drop");
     tab.addEventListener("mousedown", mdown, false);
@@ -293,9 +355,6 @@ function dragAndDrop() {
         drag.classList.remove("drag");
     }
 }
-
-document.addEventListener("DOMContentLoaded", dragAndDrop);
-
 
 //引数はYY-MM-DDThh:mm形式
 function splitDateTime(dateTime) {
