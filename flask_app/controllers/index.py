@@ -5,7 +5,9 @@ import os
 import uuid
 from cryptography.fernet import Fernet
 from flask_app import db
-from flask_app.models import User, SharedSchedule, NoneSharedSchedule
+from flask_app.models import SharedSchedule, NoneSharedSchedule
+
+
 
 index_bp = Blueprint('index', __name__, url_prefix='/')
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
@@ -48,13 +50,13 @@ def create_calendar(_year=-1, _month=-1):
         if month_data["first_day"] == 6:
             #月の範囲を超えているか
             if day+1 <= month_data["month_range"]:
-                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day+1}</div><ul class='schedule-list'></ul></td>"
+                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day+1}</div><div class='add'></div><ul class='schedule-list'></ul></td>"
             else:
                 html += "<td></td>"
         else:
             #月の範囲内か
             if day > month_data["first_day"] and day - month_data["first_day"] <= month_data["month_range"]:
-                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day - month_data['first_day']}</div><ul class='schedule-list'></ul></td>"
+                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day - month_data['first_day']}</div><div class='add'></div><ul class='schedule-list'></ul></td>"
             else:
                 html += "<td></td>"
         #週の最後か
@@ -68,8 +70,8 @@ def create_calendar(_year=-1, _month=-1):
 def get_add_form():
     #スケジュル追加フォーム
     html = """
-            <div class="add-form">
-                <div class="tab drag-and-drop"><span id="add-content">スケジュールの追加</span><span id="back">×</span></div>
+            <div class="add-form show">
+                <div class="tab drag-and-drop shared"><span id="add-content">スケジュールの追加</span><span id="back">×</span></div>
                 <input type="text" id="title" placeholder="タイトルを追加">
                 <div id="time"><input type="datetime-local" class="period" id="start" min="2023-04-01T00:00" max="2027-03-31T23:59"><span id="separator">–</span><input type="datetime-local" class="period" id="end" min="2023-04-01T00:00" max="2027-03-31T23:59"></div>
                 <div id="options">
@@ -91,7 +93,43 @@ def get_add_form():
                 </div>
                 <div id="select">
                     <div id="cancel">キャンセル</div>
-                    <div id="add">追加</div>
+                    <div id="add" class="shared">追加</div>
+                </div>
+            </div>
+            """
+    return jsonify({"html": html})
+
+#詳細HTMLを渡す
+@index_bp.route("/get_detail", methods=["GET"])
+def get_detail():
+    html =  """
+            <div class="detail show">
+                <div class="tab drag-and-drop shared">
+                    <span id="detail-back">×</span>
+                </div>
+                <div id="detail-title">
+                    <span class="dot shared" id="dot-title"></span>
+                    <input type="text" id="detail-data" value="" disabled>
+                </div>
+                <div id="detail-time">
+                    <span class="dot shared" id="dot-period"></span>
+                    <div class="detail-period" id="detail-start">
+                        <span id="detail-year"></span>-<span id="detail-month"></span>-<span id="detail-day"></span> 
+                        <span id="detail-hour"></span>:<span id="detail-minute"></span>
+                    </div>
+                    <span id="separator">–</span>
+                    <div class="detail-period" id="detail-end">
+                        <span id="detail-year"></span>-<span id="detail-month"></span>-<span id="detail-day"></span> 
+                        <span id="detail-hour"></span>:<span id="detail-minute"></span>
+                    </div>
+                </div>
+                <div id="added-time">
+                    追加日：<span id="added-year"></span>-<span id="added-month"></span>-<span id="added-day"></span> 
+                    <span id="added-hour"></span>:<span id="added-minute"></span>
+                </div>
+                <div id="select">
+                    <div id="update">修正</div>
+                    <div id="delete" class="shared">削除</div>
                 </div>
             </div>
             """
@@ -128,7 +166,6 @@ def create_schedule_data(data):
 
     return {"start_time_dt": start_time_dt, "end_time_dt": end_time_dt, "added_date_dt": added_date_dt}
 
-
 #共有スケジュールの登録
 @index_bp.route("/set_shared_schedule", methods=["POST"])
 def set_shared_schedule():
@@ -152,13 +189,8 @@ def set_none_shared_schedule():
     data = request.get_json()
     created_data = create_schedule_data(data)
 
-    #ユーザーIDがない場合は作成
-    if "user_id" not in session:
-        session["user_id"] = str(uuid.uuid4())
-    #ユーザーIDの暗号化
     user_id = session["user_id"]
-    user_id = user_id.encode('utf-8')
-    encrypted_user_id = str(cipher_suite.encrypt(user_id))
+    encrypted_user_id = cipher_suite.encrypt(user_id.encode('utf-8'))
 
     schedule = NoneSharedSchedule(
         title = data["title"],
@@ -180,15 +212,9 @@ def date_split(datetime):
     
     return {"year": int(year), "month": int(month), "day": int(day), "hour": int(hour), "minute": int(minute)}
     
-#共有スケジュールから月のスケジュールを取得する
-@index_bp.route("/get_monthly_shared_schedule", methods=["GET"])
-def get_monthly_shared_schedule():
-    schedule = db.session.query(SharedSchedule).all()
-    year = request.args.get("year", type=int)
-    month = request.args.get("month", type=int)
-    response = []
-    def create_response(schedule):
+def create_response(schedule, shared_optoin):
         response = {
+            "shared_option": shared_optoin,
             "schedule_id": schedule.schedule_id,
             "title"     : schedule.title,
             "start_time": date_split(str(schedule.start_time)),
@@ -196,22 +222,62 @@ def get_monthly_shared_schedule():
             "added_date": date_split(str(schedule.added_date)),
         }
         return response
-    
+
+#スケジュールから月のスケジュールを取得する
+@index_bp.route("/get_monthly_schedule", methods=["GET"])
+def get_monthly_schedule():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    response = []
+
+    #共有スケジュール
+    schedules = db.session.query(SharedSchedule).all()
     month_start = datetime.datetime(year, month, day=1, hour=0, minute=0)
     month_end = datetime.datetime(year, month, day=calendar.monthrange(year, month)[1], hour=23, minute=59, second=59)
-    for s in schedule:
-        start_time_dt = date_split(str(s.start_time))
-        end_time_dt = date_split(str(s.start_time))
+    for schedule in schedules:
+        start_time_dt = date_split(str(schedule.start_time))
+        end_time_dt = date_split(str(schedule.start_time))
         start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
         end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
         #まるまる入っている、前月をまたぐ、後月をまたぐ
         if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time):
-            response.append(create_response(s))
+            response.append(create_response(schedule, 1))
+
+    #非共有スケジュール
+    schedules = []
+    user_id = session["user_id"]
+    schedule_all = db.session.query(NoneSharedSchedule).all()
+    for schedule in schedule_all:
+        decrypted_user_id = cipher_suite.decrypt(schedule.user_id)
+        if decrypted_user_id == user_id.encode("utf-8"):
+            schedules.append(schedule)
+    for schedule in schedules:
+        start_time_dt = date_split(str(schedule.start_time))
+        end_time_dt = date_split(str(schedule.start_time))
+        start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
+        end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
+        #まるまる入っている、前月をまたぐ、後月をまたぐ
+        if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time):
+            response.append(create_response(schedule, 0))
     return jsonify({"response": response})
+
+#共有スケジュールから日毎のスケジュールを取得する
+@index_bp.route("/get_daily_schedule", methods=["GET"])
+def get_daily_schedule():
+    schedule_id = request.args.get("schedule_id", type=int)
+    shared_option = request.args.get("shared_option", type=int)
+    if shared_option:
+        schedule = db.session.query(SharedSchedule).filter(SharedSchedule.schedule_id == schedule_id).first()
+    else:
+        schedule = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
+    response = create_response(schedule, shared_option)
+    return jsonify({"response": response})
+
 
 @index_bp.route("/", methods=["GET", "POST"])
 def index():
-    if "user_id" not in session:
+    if "user_id" not in session or not session["user_id"]:
         session["user_id"] = str(uuid.uuid4())
+        session.permanent = True
 
     return render_template("index.html")

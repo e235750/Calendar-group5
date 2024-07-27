@@ -137,12 +137,6 @@ td ul li {
   border-radius: 2px;
   color: white;
 }
-.shared {
-  background-color: #3399FF;
-}
-.none-shared {
-  background-color: #FF82B2;
-}
 
 td:first-child {
     color: #FF3333;
@@ -152,10 +146,28 @@ td:last-child {
     border-right: 0;
 }
 .date-num {
-    position: absolute;
-    left: 5px;
-    top: 5px;
-    font-size: 15px;
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  font-size: 15px;
+  padding: 0 3px;
+  margin: 0;
+  border-radius: 100px;
+}
+.date-num:hover {
+background-color: #EEEEEE;
+}
+.add {
+position: absolute;
+width: 68%;
+height: 23%;
+padding: 3px 0;
+top: 1%;
+left: 28%;
+border-radius: 5px;
+}
+.add:hover {
+  background-color: #EEEEEE;
 }
 th{ /* 表の見出しの指定 */
     color:#FF9999;
@@ -198,14 +210,14 @@ th:last-child {
     font-size: 13px;
     top: 20%;
     left: 3%;
-    color: #333;
+    color: white;
   }
   #back {
     position: absolute;
     top: -8%;
     right: 2.5%;
     font-size: 20px;
-    color: #666;
+    color: white;
     border-radius: 5px;
     cursor: pointer;
   }
@@ -294,12 +306,12 @@ th:last-child {
   #shared-option:hover {
     transition-duration: 250ms;
     background-color: #EEEEEE;
-    border-bottom: 1.5px solid #4689FF;
+    border-bottom: 1.5px solid #3399FF;
   }
   #none-shared-option:hover {
     transition-duration: 500ms;
     background-color: #EEEEEE;
-    border-bottom: 1.5px solid #4689FF;
+    border-bottom: 1.5px solid #FF82B2;
   }
 
   /* バリデーション */
@@ -346,7 +358,6 @@ th:last-child {
     padding: 8px 18px;
     border-radius: 3px;
     color: #FFF;
-    background-color: #2C7CFF;
   }
   #add:hover {
     transition-duration: 250ms;
@@ -360,3 +371,171 @@ th:last-child {
   .drag {
     z-index: 101;
   }
+
+/* 詳細表示 */
+.detail {
+  position: absolute;
+  width: 350px;
+  height: 250px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 10px 5px 30px #999;
+  z-index: 100;
+}
+
+.tab {
+  position: absolute;
+  width: 100%;
+  height: 10%;
+  border-radius: 5px 5px 0 0;
+}
+
+#detail-back {
+  position: absolute;
+  top: -12%;
+  right: 2.5%;
+  font-size: 20px;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#detail-title {
+position: absolute;
+top: 19%;
+left: 7%;
+width: 100%;
+height: 40px;
+border: none;
+box-sizing: none;
+outline: none;
+font-size: 22px;
+color: #333;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+#dot-title {
+  position: absolute;
+  top: 30%;
+  left: 0;
+}
+#dot-period {
+  position: absolute;
+  
+  top: 40%;
+  left: -8.9%;
+}
+#detail-data {
+  position: absolute;
+  left: 7%;
+  width: 78%;
+  height: 80%;
+  font-size: 15px;
+  color: #333;
+  border: none;
+  background-color: white;
+  border-bottom: 1.5px solid #EEEEEE;
+}
+#detail-data:hover {
+  transition-duration: 500ms;
+  border-bottom: 1.5px solid #4689FF;
+}
+#detail-time {
+  position: absolute;
+  top: 38%;
+  left: 14%;
+  width: 75%;
+  height: 15%;
+}
+.detail-period {
+  position: absolute;
+  width: 120px;
+  border: none;
+  box-sizing: none;
+  outline: none;
+  border-bottom: 1.5px solid #EEEEEE;
+  font-size: 14px;
+  color: #444;
+  caret-color: #2C7CFF;
+  padding: 9px;
+  border-radius: 2px;
+}
+.detail-period:hover{
+  transition-duration: 500ms;
+  border-bottom: 1.5px solid #4689FF;
+}
+#detail-start {
+  left: 0;
+  width: 42%;
+}
+#detail-end {
+  left: 57%;
+  width: 42%;
+}
+#separator {
+  position: absolute;
+  left: 51%;
+  top: 5px;
+  font-size: 17px;
+  color: #888;
+}
+
+#added-time {
+position: absolute;
+top: 58%;
+left: 43%;
+border: none;
+box-sizing: none;
+outline: none;
+border-bottom: 1.5px solid #EEEEEE;
+font-size: 13px;
+color: #777;
+caret-color: #2C7CFF;
+padding: 9px;
+border-radius: 2px;
+}
+#added-time:hover{
+  transition-duration: 500ms;
+  border-bottom: 1.5px solid #4689FF;
+}
+
+#select {
+  position: absolute;
+  top: 80%;
+  width: 100%;
+  border-radius: 2px;
+}
+#update {
+  position: absolute;
+  left: 55%;
+  padding: 8px 16px;
+  border-radius: 5px;
+  color: #555;
+}
+#update:hover {
+  transition-duration: 250ms;
+  background-color: #EEEEEE;
+}
+#delete {
+  position: absolute;
+  left: 76%;
+  padding: 8px 16px;
+  border-radius: 3px;
+  color: #FFF;
+}
+#detete:hover {
+  transition-duration: 250ms;
+  background-color: #005FFF;
+}
+
+.shared {
+  transition-duration: 250ms;
+  background-color: #3399FF;
+}
+.none-shared {
+  transition-duration: 250ms;
+  background-color: #FF82B2;
+}
