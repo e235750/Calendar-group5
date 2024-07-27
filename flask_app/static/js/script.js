@@ -1,3 +1,4 @@
+//画面読み込み時の処理
 document.addEventListener("DOMContentLoaded", () => {
     const date = new Date();
     const nowYear = date.getFullYear();
@@ -71,132 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-let  = false
-
-//詳細セット
-function setDetail(event) {
-    let curX = event.pageX;
-    let curY = event.pageY;
-    const margin = 35;
-
-    fetch("/get_detail")
-    .then(response => response.json())
-    .then(data => {
-        //詳細がでている間は他の詳細のクリックイベントを無効にする
-        document.querySelectorAll(".schedule").forEach((elm) => {
-            elm.style.pointerEvents = "none";
-        });
-        //詳細がでている間は追加のクリックイベントを無効にする
-        document.querySelectorAll(".add").forEach((elm) => {
-            elm.style.pointerEvents = "none";
-        });
-        if(document.querySelector(".detail")) document.querySelector(".detail").remove();
-
-        let parser = new DOMParser();
-        let doc = parser.parseFromString(data.html, "text/html");
-        let detailHTML = doc.body.firstChild;
-        document.body.insertAdjacentElement("afterbegin", detailHTML);
-        const detail =  document.querySelector(".detail")
-
-        //詳細が画面外に出ないようにする
-        if(curX < detail.clientWidth+margin) {
-            curX += margin;
-        }
-        else {
-            curX -= detail.clientWidth + margin;
-        }
-        //詳細の位置
-        curY -= detail.clientHeight/2;
-        detail.style.top = `${curY}px`;
-        detail.style.left = `${curX}px`;
-
-        //キャンセル時の詳細消去 
-        detail.querySelector("#detail-back").addEventListener("click", () => {
-            detail.remove();
-            document.querySelectorAll(".schedule").forEach((elm) => {
-                elm.style.pointerEvents = "auto";
-            });
-            document.querySelectorAll(".add").forEach((elm) => {
-                elm.style.pointerEvents = "auto";
-            });
-        });
-
-        // ドラッグしたら詳細が消えるバグのためコメントアウト
-        // //詳細以外をクリックしたらフォームを削除する
-        // document.addEventListener("click", (event) => {
-        //     if(document.querySelector(".detail") != null) {
-        //         let currElm = event.target;
-        //         let isDetail = false;
-        //         while(currElm != null) {
-        //             if(currElm.className === "detail") {
-        //                 isDetail = true;
-        //                 break;
-        //             }
-        //             currElm = currElm.parentNode;
-        //         }
-        //         if(!isDetail) {
-        //             document.querySelector(".detail").remove();
-        //             document.querySelectorAll(".schedule").forEach((elm) => {
-        //                 elm.style.pointerEvents = "auto";
-        //             });
-        //         }
-        //     }
-        // });
-        dragAndDrop();
-        return getDailySchedule(event.target.id, event.target.value)
-    })
-    .then(scheduleData => {
-        const detail = document.querySelector(".detail");
-        const title = detail.querySelector("#detail-data");
-        const periodS = detail.querySelector("#detail-start");
-        const periodE = detail.querySelector("#detail-end");
-        const addedTime = detail.querySelector("#added-time")
-
-        const sharedOption = scheduleData["shared_option"]
-
-        //共有、非共有クラス設定
-        if(sharedOption) {
-            detail.querySelector(".tab").classList.remove("none-shared");
-            detail.querySelector("#dot-title").classList.remove("none-shared");
-            detail.querySelector("#dot-period").classList.remove("none-shared");
-            detail.querySelector("#delete").classList.remove("none-shared");
-            detail.querySelector(".tab").classList.add("shared");
-            detail.querySelector("#dot-title").classList.add("shared");
-            detail.querySelector("#dot-period").classList.add("shared");
-            detail.querySelector("#delete").classList.add("shared");
-        }
-        else {
-            detail.querySelector(".tab").classList.remove("shared");
-            detail.querySelector("#dot-title").classList.remove("shared");
-            detail.querySelector("#dot-period").classList.remove("shared");
-            detail.querySelector("#delete").classList.remove("shared");
-            detail.querySelector(".tab").classList.add("none-shared");
-            detail.querySelector("#dot-title").classList.add("none-shared");
-            detail.querySelector("#dot-period").classList.add("none-shared");
-            detail.querySelector("#delete").classList.add("none-shared");
-        }
-        title.value = scheduleData["title"]
-        //期間、追加日設定
-        {
-            periodS.querySelector("#detail-year").textContent = String(scheduleData["start_time"]["year"]);
-            periodS.querySelector("#detail-month").textContent = String(scheduleData["start_time"]["month"]).padStart(2, '0');
-            periodS.querySelector("#detail-day").textContent = String(scheduleData["start_time"]["day"]).padStart(2, '0');
-            periodS.querySelector("#detail-hour").textContent = String(scheduleData["start_time"]["hour"]).padStart(2, '0');
-            periodS.querySelector("#detail-minute").textContent = String(scheduleData["start_time"]["minute"]).padStart(2, '0');
-            periodE.querySelector("#detail-year").textContent = String(scheduleData["end_time"]["year"]);
-            periodE.querySelector("#detail-month").textContent = String(scheduleData["end_time"]["month"]).padStart(2, '0');
-            periodE.querySelector("#detail-day").textContent = String(scheduleData["end_time"]["day"]).padStart(2, '0');
-            periodE.querySelector("#detail-hour").textContent = String(scheduleData["end_time"]["hour"]).padStart(2, '0');
-            periodE.querySelector("#detail-minute").textContent = String(scheduleData["end_time"]["minute"]).padStart(2, '0');
-            addedTime.querySelector("#added-year").textContent = String(scheduleData["added_date"]["year"]);
-            addedTime.querySelector("#added-month").textContent = String(scheduleData["added_date"]["month"]).padStart(2, '0');
-            addedTime.querySelector("#added-day").textContent = String(scheduleData["added_date"]["day"]).padStart(2, '0');
-            addedTime.querySelector("#added-hour").textContent = String(scheduleData["added_date"]["hour"]).padStart(2, '0');
-            addedTime.querySelector("#added-minute").textContent = String(scheduleData["added_date"]["minute"]).padStart(2, '0');
-        }
-    })
-}
-
 //カレンダーセット
 function setCalendar(year, month) {
     return fetch(`/get_calendar?year=${year}&month=${month}`)
@@ -212,7 +87,6 @@ function setCalendar(year, month) {
         return getMonthlySchedule(year, month);
     })
     .then(scheduleData => {
-        console.log(scheduleData)
         //スケジュールがあるなら表示する
         scheduleData.forEach((elm) => {
             const startTimeDt = elm["start_time"];
@@ -478,10 +352,10 @@ function postScheduleData(data, shared) {
         if(!response.ok) {
             throw new Error("Error", response.statusText)
         }
-        return response.json
+        return response.json();
     })
     .then(data => {
-        console.log("Success", data)
+        console.log("Success", data.response)
     })
     .catch(error => {
         console.error("Error", error);
@@ -489,7 +363,7 @@ function postScheduleData(data, shared) {
 }
 
 //指定年月の共有スケジュール情報を取得
-function getMonthlySchedule(year, month, ) {
+function getMonthlySchedule(year, month) {
     return fetch(`/get_monthly_schedule?year=${year}&month=${month}`)
     .then(response => response.json())
     .then(data => {
@@ -499,6 +373,145 @@ function getMonthlySchedule(year, month, ) {
         console.error("Error", error)
         throw error
     });
+}
+
+//詳細セット
+function setDetail(event) {
+    let curX = event.pageX;
+    let curY = event.pageY;
+    const margin = 35;
+
+    fetch("/get_detail")
+    .then(response => response.json())
+    .then(data => {
+        //詳細がでている間は他の詳細のクリックイベントを無効にする
+        document.querySelectorAll(".schedule").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        //詳細がでている間は追加のクリックイベントを無効にする
+        document.querySelectorAll(".add").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        if(document.querySelector(".detail")) document.querySelector(".detail").remove();
+
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(data.html, "text/html");
+        let detailHTML = doc.body.firstChild;
+        document.body.insertAdjacentElement("afterbegin", detailHTML);
+        const detail =  document.querySelector(".detail")
+
+        //詳細が画面外に出ないようにする
+        if(curX < detail.clientWidth+margin) {
+            curX += margin;
+        }
+        else {
+            curX -= detail.clientWidth + margin;
+        }
+        //詳細の位置
+        curY -= detail.clientHeight/2;
+        detail.style.top = `${curY}px`;
+        detail.style.left = `${curX}px`;
+
+        //キャンセル時の詳細消去 
+        detail.querySelector("#detail-back").addEventListener("click", () => {
+            detail.remove();
+            document.querySelectorAll(".schedule").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".add").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+        });
+
+        const detailDelete = detail.querySelector("#delete")
+        detailDelete.addEventListener("click", () => {
+            deleteSchedule(event.target.id, event.target.value);
+            detail.remove();
+            document.querySelectorAll(".schedule").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".add").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            year = document.querySelector("#year").textContent;
+            month = document.querySelector("#month").textContent;
+            return setCalendar(Number(year), Number(month))
+        })
+
+        // ドラッグしたら詳細が消えるバグのためコメントアウト
+        // //詳細以外をクリックしたらフォームを削除する
+        // document.addEventListener("click", (event) => {
+        //     if(document.querySelector(".detail") != null) {
+        //         let currElm = event.target;
+        //         let isDetail = false;
+        //         while(currElm != null) {
+        //             if(currElm.className === "detail") {
+        //                 isDetail = true;
+        //                 break;
+        //             }
+        //             currElm = currElm.parentNode;
+        //         }
+        //         if(!isDetail) {
+        //             document.querySelector(".detail").remove();
+        //             document.querySelectorAll(".schedule").forEach((elm) => {
+        //                 elm.style.pointerEvents = "auto";
+        //             });
+        //         }
+        //     }
+        // });
+        dragAndDrop();
+        return getDailySchedule(event.target.id, event.target.value)
+    })
+    .then(scheduleData => {
+        const detail = document.querySelector(".detail");
+        const title = detail.querySelector("#detail-data");
+        const periodS = detail.querySelector("#detail-start");
+        const periodE = detail.querySelector("#detail-end");
+        const addedTime = detail.querySelector("#added-time")
+
+        const sharedOption = scheduleData["shared_option"]
+
+        //共有、非共有クラス設定
+        if(sharedOption) {
+            detail.querySelector(".tab").classList.remove("none-shared");
+            detail.querySelector("#dot-title").classList.remove("none-shared");
+            detail.querySelector("#dot-period").classList.remove("none-shared");
+            detail.querySelector("#delete").classList.remove("none-shared");
+            detail.querySelector(".tab").classList.add("shared");
+            detail.querySelector("#dot-title").classList.add("shared");
+            detail.querySelector("#dot-period").classList.add("shared");
+            detail.querySelector("#delete").classList.add("shared");
+        }
+        else {
+            detail.querySelector(".tab").classList.remove("shared");
+            detail.querySelector("#dot-title").classList.remove("shared");
+            detail.querySelector("#dot-period").classList.remove("shared");
+            detail.querySelector("#delete").classList.remove("shared");
+            detail.querySelector(".tab").classList.add("none-shared");
+            detail.querySelector("#dot-title").classList.add("none-shared");
+            detail.querySelector("#dot-period").classList.add("none-shared");
+            detail.querySelector("#delete").classList.add("none-shared");
+        }
+        title.value = scheduleData["title"]
+        //期間、追加日設定
+        {
+            periodS.querySelector("#detail-year").textContent = String(scheduleData["start_time"]["year"]);
+            periodS.querySelector("#detail-month").textContent = String(scheduleData["start_time"]["month"]).padStart(2, '0');
+            periodS.querySelector("#detail-day").textContent = String(scheduleData["start_time"]["day"]).padStart(2, '0');
+            periodS.querySelector("#detail-hour").textContent = String(scheduleData["start_time"]["hour"]).padStart(2, '0');
+            periodS.querySelector("#detail-minute").textContent = String(scheduleData["start_time"]["minute"]).padStart(2, '0');
+            periodE.querySelector("#detail-year").textContent = String(scheduleData["end_time"]["year"]);
+            periodE.querySelector("#detail-month").textContent = String(scheduleData["end_time"]["month"]).padStart(2, '0');
+            periodE.querySelector("#detail-day").textContent = String(scheduleData["end_time"]["day"]).padStart(2, '0');
+            periodE.querySelector("#detail-hour").textContent = String(scheduleData["end_time"]["hour"]).padStart(2, '0');
+            periodE.querySelector("#detail-minute").textContent = String(scheduleData["end_time"]["minute"]).padStart(2, '0');
+            addedTime.querySelector("#added-year").textContent = String(scheduleData["added_date"]["year"]);
+            addedTime.querySelector("#added-month").textContent = String(scheduleData["added_date"]["month"]).padStart(2, '0');
+            addedTime.querySelector("#added-day").textContent = String(scheduleData["added_date"]["day"]).padStart(2, '0');
+            addedTime.querySelector("#added-hour").textContent = String(scheduleData["added_date"]["hour"]).padStart(2, '0');
+            addedTime.querySelector("#added-minute").textContent = String(scheduleData["added_date"]["minute"]).padStart(2, '0');
+        }
+    })
 }
 
 function getDailySchedule(scheduleID, sharedOption) {
@@ -559,6 +572,18 @@ function dragAndDrop() {
     }
 }
 
+//スケジュールIDに合致するスケジュールの削除
+function deleteSchedule(scheduleID, sharedOption) {
+    fetch(`/delete_schedule?schedule_id=${scheduleID}&shared_option=${sharedOption}`)
+    .then(response => response.json())
+    .then(data => {
+        console.log("Success", data.response)
+    })
+    .catch(error => {
+        console.error("Error", error);
+    })
+}
+
 //引数はYY-MM-DDThh:mm形式
 function splitDateTime(dateTime) {
     const [date, time] = dateTime.split("T");
@@ -572,4 +597,3 @@ function checkPeriod(period) {
     if(period == "" || reg.test(period) == -1) return false;
     return true;
 }
-

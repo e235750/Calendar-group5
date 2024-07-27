@@ -295,6 +295,7 @@ th:last-child {
     border-bottom: 1.5px solid #EEEEEE;
     padding: 8px;
     border-radius: 2px;
+    accent-color: #3399FF;
   }
   #none-shared-option {
     position: absolute;
@@ -302,6 +303,8 @@ th:last-child {
     border-bottom: 1.5px solid #EEEEEE;
     padding: 8px;
     border-radius: 2px;
+    border-radius: 2px;
+    accent-color: #FF82B2;
   }
   #shared-option:hover {
     transition-duration: 250ms;
@@ -361,7 +364,7 @@ th:last-child {
   }
   #add:hover {
     transition-duration: 250ms;
-    background-color: #005FFF;
+    background-color: #C299FF;
   }
 
   .drag-and-drop {

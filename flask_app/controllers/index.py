@@ -65,6 +65,14 @@ def create_calendar(_year=-1, _month=-1):
 
     return {"html": html}
 
+#カレンダーHTMLを渡す
+@index_bp.route("/get_calendar", methods=["GET"])
+def get_calendar():
+    year = request.args.get("year", type=int, default=datetime.datetime.now().year)
+    month = request.args.get("month", type=int, default=datetime.datetime.now().month)
+    calendar_data = create_calendar(year, month)
+    return jsonify(calendar_data)
+
 #追加フォームHTMLを渡す
 @index_bp.route("/get_add_form", methods=["GET"])
 def get_add_form():
@@ -135,15 +143,7 @@ def get_detail():
             """
     return jsonify({"html": html})
 
-#カレンダーHTMLを渡す
-@index_bp.route("/get_calendar", methods=["GET"])
-def get_calendar():
-    year = request.args.get("year", type=int, default=datetime.datetime.now().year)
-    month = request.args.get("month", type=int, default=datetime.datetime.now().month)
-    calendar_data = create_calendar(year, month)
-    return jsonify(calendar_data)
-
-#レスポンスからスケジュールデータ作成
+#レスポンスからスケジュールデータ作成(データベース登録用)
 def create_schedule_data(data):
     start_time = data.get("start_time", {})
     end_time = data.get("end_time", {})
@@ -211,7 +211,8 @@ def date_split(datetime):
     hour, minute, second = time.split(':')
     
     return {"year": int(year), "month": int(month), "day": int(day), "hour": int(hour), "minute": int(minute)}
-    
+
+#レスポンスの作成(JSに渡すよう)
 def create_response(schedule, shared_optoin):
         response = {
             "shared_option": shared_optoin,
@@ -261,7 +262,7 @@ def get_monthly_schedule():
             response.append(create_response(schedule, 0))
     return jsonify({"response": response})
 
-#共有スケジュールから日毎のスケジュールを取得する
+#スケジュールIDに合致するスケジュールを取得する
 @index_bp.route("/get_daily_schedule", methods=["GET"])
 def get_daily_schedule():
     schedule_id = request.args.get("schedule_id", type=int)
@@ -273,9 +274,26 @@ def get_daily_schedule():
     response = create_response(schedule, shared_option)
     return jsonify({"response": response})
 
+#スケジュールIDに合致するスケジュールを削除する
+@index_bp.route("delete_schedule", methods=["GET"])
+def delete_schedule():
+    schedule_id = request.args.get("schedule_id", type=int)
+    shared_option = request.args.get("shared_option", type=int)
+
+    #スケジュールの取得
+    if(shared_option):
+        target = db.session.query(SharedSchedule).filter(SharedSchedule.schedule_id == schedule_id).first()
+    else:
+        target = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
+    
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify({"response": "スケジュール削除完了"})
 
 @index_bp.route("/", methods=["GET", "POST"])
 def index():
+    #ユーザーIDがない場合は作成する
     if "user_id" not in session or not session["user_id"]:
         session["user_id"] = str(uuid.uuid4())
         session.permanent = True
