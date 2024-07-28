@@ -93,34 +93,36 @@ function setCalendar(year, month) {
             const endTimeDt = elm["end_time"];
             const startTime = new Date(startTimeDt["year"], startTimeDt["month"]-1, startTimeDt["day"], startTimeDt["hour"], startTimeDt["minute"]);
             const endTime = new Date(endTimeDt["year"], endTimeDt["month"]-1, endTimeDt["day"], endTimeDt["hour"], endTimeDt["minute"]);
+            //月のはじめ（Dateは月をリストのインデックスで管理しているから、欲しい月を-1した値を渡す）
             const monthStart = new Date(year, month-1, 1, 0, 0);
+            //月の終わり
             const monthEnd = new Date(year, month, 0, 23, 59, 59)
             //スケジュールをリストに追加
             function appendShedule(elm, day) {
                 const td = document.querySelector(`#td-${day}`);
                 const ul = td.querySelector("ul");
-                if(ul.childElementCount < 3) {
-                    const li = document.createElement("li");
-                    li.classList.add("schedule");
-                    if(elm["shared_option"]) {
-                        li.classList.add("shared");
-                        li.value = 1;
-                    }
-                    else {
-                        li.classList.add("none-shared");
-                        li.value = 0;
-                    }
-                    li.id = elm["schedule_id"];
-                    let titleText = elm.title;
-                    if(titleText.length > 6) {
-                        titleText = titleText.slice(0,6);
-                        titleText += "...";
-                    }
-                    li.textContent = titleText;
-                    ul.appendChild(li);
-
-                    li.addEventListener("click", (event) => {setDetail(event)})
+                const li = document.createElement("li");
+                li.classList.add("schedule");
+                if(elm["shared_option"]) {
+                    li.classList.add("shared");
+                    li.value = 1;
                 }
+                else {
+                    li.classList.add("none-shared");
+                    li.value = 0;
+                }
+                li.id = elm["schedule_id"];
+                let titleText = elm.title;
+                if(titleText.length > 6) {
+                    titleText = titleText.slice(0,6);
+                    titleText += "...";
+                }
+                li.textContent = titleText;
+                //liが3つ以上ある場合は非表示
+                if(ul.childElementCount > 2) li.style.display = "none";
+                ul.appendChild(li);
+
+                li.addEventListener("click", (event) => {setDetail(event)})
             }
             //まるまる入っている
             if((monthStart <= startTime && endTime <= monthEnd) && (startTimeDt["year"] == year && startTimeDt["month"] == month) && (endTimeDt["year"] == year && endTimeDt["month"] == month)) {
@@ -140,7 +142,19 @@ function setCalendar(year, month) {
                     appendShedule(elm, day)
                 }
             }
+            //前月、後月をまたぐ
+            else if(startTime < monthStart && monthEnd < endTime) {
+                for(let day = 1; day <= monthEnd.getDate(); day ++) {
+                    appendShedule(elm, day)
+                }
+            }
         })
+    })
+    .then(() => {
+            //スケジュールリスト表示
+            document.querySelectorAll(".date-num").forEach((elm) => {
+            elm.addEventListener("click", (e) => setScheduleList(e))
+        });
     })
     .catch(error => {
         console.error("Error", error)
@@ -162,6 +176,9 @@ function setAddForm(event) {
         });
         //フォームがでている間は詳細のクリックイベントを無効にする
         document.querySelectorAll(".schedule").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        document.querySelectorAll(".date-num").forEach((elm) => {
             elm.style.pointerEvents = "none";
         });
         if(document.querySelector(".add-form")) document.querySelector(".add-form").remove();
@@ -215,6 +232,9 @@ function setAddForm(event) {
             document.querySelectorAll(".schedule").forEach((elm) => {
                 elm.style.pointerEvents = "auto";
             });
+            document.querySelectorAll(".date-num").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
         });
         form.querySelector("#back").addEventListener("click", () => {
             form.remove();
@@ -222,6 +242,9 @@ function setAddForm(event) {
                 elm.style.pointerEvents = "auto";
             });
             document.querySelectorAll(".schedule").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".date-num").forEach((elm) => {
                 elm.style.pointerEvents = "auto";
             });
         });
@@ -501,7 +524,7 @@ function postUpdataSchedule(data) {
         console.log("Error", error);
     })
 }
-//詳細セット
+//詳細セット(y, xは初期位置)
 function setDetail(event, y, x) {
     let curX = event.pageX;
     let curY = event.pageY;
@@ -516,6 +539,9 @@ function setDetail(event, y, x) {
         });
         //詳細がでている間は追加のクリックイベントを無効にする
         document.querySelectorAll(".add").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        document.querySelectorAll(".date-num").forEach((elm) => {
             elm.style.pointerEvents = "none";
         });
         if(document.querySelector(".detail")) document.querySelector(".detail").remove();
@@ -551,6 +577,9 @@ function setDetail(event, y, x) {
                 elm.style.pointerEvents = "auto";
             });
             document.querySelectorAll(".add").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".date-num").forEach((elm) => {
                 elm.style.pointerEvents = "auto";
             });
         });
@@ -647,6 +676,146 @@ function setDetail(event, y, x) {
             addedTime.querySelector("#added-hour").textContent = String(scheduleData["added_date"]["hour"]).padStart(2, '0');
             addedTime.querySelector("#added-minute").textContent = String(scheduleData["added_date"]["minute"]).padStart(2, '0');
         }
+    })
+    .catch(error => {
+        console.error("Error", error)
+        throw error
+    });
+}
+
+//スケジュールリストの表示
+function setScheduleList(event) {
+    let curX = event.pageX;
+    let curY = event.pageY;
+    const margin = 35;
+
+    fetch("/get_schedule_list")
+    .then(response => response.json())
+    .then(data => {
+        //リストがでている間は他の詳細のクリックイベントを無効にする
+        document.querySelectorAll(".schedule").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        //リストがでている間は追加のクリックイベントを無効にする
+        document.querySelectorAll(".add").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        //リストがでている間は他のリストのクリックイベントを無効にする
+        document.querySelectorAll(".date-num").forEach((elm) => {
+            elm.style.pointerEvents = "none";
+        });
+        if(document.querySelector(".schedule-form")) document.querySelector(".detail").remove();
+
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(data.html, "text/html");
+        let listFormHTML = doc.body.firstChild;
+        document.body.insertAdjacentElement("afterbegin", listFormHTML);
+        const list =  document.querySelector(".schedule-form")
+
+        //詳細が画面外に出ないようにする
+        if(curX < list.clientWidth+margin) {
+            curX += margin;
+        }
+        else {
+            curX -= list.clientWidth + margin;
+        }
+        //詳細の位置
+        curY -= list.clientHeight/2;
+        list.style.top = `${curY}px`;
+        list.style.left = `${curX}px`;
+
+        //共有、非共有スケジュールの数
+        let sharedNum = 0;
+        let noneSharedNum = 0;
+
+        //スケジュールの追加
+        const ul = list.querySelector("#schedule-list");
+        const td = document.querySelector(`#td-${event.target.textContent}`);
+        const li = td.querySelectorAll(".schedule");
+        li.forEach((elm) => {
+            if(Number(elm.value) === 1) sharedNum ++;
+            else noneSharedNum ++;
+            const promise = getDailySchedule(elm.id, elm.value)
+                .then(response => {
+                    return getListHTML(elm.id, elm.value, response.title);
+                })
+                .then(html => {
+                    let doc = parser.parseFromString(html, "text/html");
+                    let listHTML = doc.body.firstChild;
+                    ul.insertAdjacentElement("beforeend", listHTML);
+                    const item = ul.querySelector(`[id='${elm.id}']`);
+                    //詳細表示のイベントリスナー
+                    item.addEventListener("click", () => {
+                        const rect = list.getBoundingClientRect();
+                        curY = rect.top;
+                        curX = rect.left;
+                        list.remove();
+                        document.querySelectorAll(".schedule").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        document.querySelectorAll(".add").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        document.querySelectorAll(".date-num").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        const event = {"target": item}
+                        console.log(curY, curX)
+                        setDetail(event, curY, curX)
+                    })
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+        const sharedNumValue = list.querySelector("#shared-num-value");
+        const noneSharedNumValue = list.querySelector("#none-shared-num-value");
+        sharedNumValue.textContent = sharedNum;
+        noneSharedNumValue.textContent = noneSharedNum;
+
+        //キャンセル時のリスト消去 
+        list.querySelector("#back").addEventListener("click", () => {
+            list.remove();
+            document.querySelectorAll(".schedule").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".add").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".date-num").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+        });
+        //戻るクリック時のリスト消去 
+        list.querySelector("#list-back").addEventListener("click", () => {
+            list.remove();
+            document.querySelectorAll(".schedule").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".add").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+            document.querySelectorAll(".date-num").forEach((elm) => {
+                elm.style.pointerEvents = "auto";
+            });
+        });
+        dragAndDrop();
+    })
+    .catch(error => {
+        console.error("Error", error)
+        throw error
+    });
+}
+
+function getListHTML(scheduleID, sharedOption, title) {
+    return fetch(`get_list_html?schedule_id=${scheduleID}&shared_option=${sharedOption}&title=${title}`)
+    .then(response => response.json())
+    .then(data => {
+        return data.html;
+    })
+    .catch(error => {
+        console.log("Error", error)
+        throw error
     })
 }
 

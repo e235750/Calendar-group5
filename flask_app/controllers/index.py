@@ -48,7 +48,7 @@ def create_calendar(_year=-1, _month=-1):
         if month_data["first_day"] == 6:
             #月の範囲を超えているか
             if day+1 <= month_data["month_range"]:
-                html += f"<td id=td-{day - month_data['first_day']} class='exi'><div class='date-num'>{day+1}</div><div class='add'></div><ul class='schedule-list'></ul></td>"
+                html += f"<td id=td-{day+1} class='exi'><div class='date-num'>{day+1}</div><div class='add'></div><ul class='schedule-list'></ul></td>"
             else:
                 html += "<td></td>"
         else:
@@ -150,6 +150,43 @@ def get_update_form():
 
     return jsonify({"html": html})
 
+#スケジュールリストHTMLを渡す
+@index_bp.route("/get_schedule_list", methods=["GET"])
+def get_schedule_list():
+    html = """
+            <div class="schedule-form show">
+                <div class="tab drag-and-drop shared">
+                <span id="list">スケジュールリスト</span>
+                    <span id="back">×</span>
+                </div>
+                <div id="scroll-box">
+                    <ul id="schedule-list">
+                    </ul>
+                </div>
+                <div id="info">
+                    <div id="shared-num"><span>共有：</span><span id="shared-num-value"></span></div>
+                    <div id="none-shared-num"><span>非共有：</span><span id="none-shared-num-value"></span></div>
+                </div>
+                <div id="select">
+                    <div id="list-back" class="shared">戻る</div>
+                </div>
+            </div>
+            """
+    
+    return jsonify({"html": html})
+
+@index_bp.route("/get_list_html", methods=["GET"])
+def get_list_html():
+    shared_option = request.args.get("shared_option", type=str)
+    schedule_id = request.args.get("schedule_id", type=str)
+    title = request.args.get("title", type=str)
+    if(shared_option):
+        option = "shared"
+    else:
+        option = "none-shared"
+    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><div class="{option}">{title}</div></li>'
+    return jsonify({"html": html})
+
 #スケジュールIDに合致するスケジュールの修正
 @index_bp.route("/update_schedule", methods=["POST"])
 def update_schedule():
@@ -171,6 +208,7 @@ def update_schedule():
     # データベースに反映
     db.session.commit()
     return jsonify({"response": "修正完了"})
+
 #詳細HTMLを渡す
 @index_bp.route("/get_detail", methods=["GET"])
 def get_detail():
@@ -304,8 +342,8 @@ def get_monthly_schedule():
         end_time_dt = date_split(str(schedule.start_time))
         start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
         end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
-        #まるまる入っている、前月をまたぐ、後月をまたぐ
-        if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time):
+        #まるまる入っている、前月をまたぐ、後月をまたぐ、前月・後月をまたぐ
+        if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time) or (start_time < month_start and month_end < end_time):
             response.append(create_response(schedule, 1))
 
     #非共有スケジュール

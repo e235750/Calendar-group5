@@ -639,6 +639,89 @@ border-radius: 2px;
   list-style: none;
 }
 
+/* スケジュールリスト */
+.schedule-form {
+  position: absolute;
+  width: 350px;
+  height: 250px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 10px 5px 30px #999;
+  z-index: 100;
+}
+#list {
+  position: absolute;
+  top: 5%;
+  left: 2%;
+  color: white;
+  opacity: 0.8;
+}
+#scroll-box {
+  position: absolute;
+  width: 100%;
+  height: 66%;
+  top: 12%;
+  overflow-y: scroll;
+}
+#schedule-list {
+  list-style: none;
+}
+.item {
+  display: flex;
+}
+.list-dot {
+  position: absolute;
+  left: 4.5%;
+  transform: translateY(150%);
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+#schedule-list li div {
+  color: white;
+  width: 88.2%;
+  padding: 5px 8px;
+  margin: 3px 0;
+  border-radius: 5px;
+}
+
+#info {
+  position: absolute;
+  display: flex;
+  top: 81%;
+  left: 10%;
+  width: 60%;
+  height: 15%;
+  border-radius: 2px;
+}
+#shared-num {
+  position: absolute;
+  top: 20%;
+  left: 7%;
+  color: #3399FF;
+}
+#none-shared-num {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  color: #FF82B2;
+}
+
+#list-select {
+  position: absolute;
+  top: 80%;
+  width: 100%;
+  border-radius: 2px;
+}
+#list-back {
+  position: absolute;
+  left: 76%;
+  padding: 8px 16px;
+  border-radius: 3px;
+  color: #FFF;
+}
+
 .shared {
   transition-duration: 250ms;
   background-color: #3399FF;
