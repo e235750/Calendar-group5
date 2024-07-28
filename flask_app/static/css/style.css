@@ -321,7 +321,7 @@ th:last-child {
   #caution {
     position: absolute;
     font-size: 12px;
-    top: 69%;
+    top: 64%;
     left: -2.5%;
   }
   #caution ul {
@@ -439,8 +439,11 @@ color: #333;
   font-size: 15px;
   color: #333;
   border: none;
+  box-sizing: none;
+  outline: none;
   background-color: white;
   border-bottom: 1.5px solid #EEEEEE;
+  caret-color: #2C7CFF;
 }
 #detail-data:hover {
   transition-duration: 500ms;
@@ -529,9 +532,111 @@ border-radius: 2px;
   border-radius: 3px;
   color: #FFF;
 }
-#detete:hover {
+#delete:hover {
   transition-duration: 250ms;
   background-color: #005FFF;
+}
+
+/* 修正フォーム */
+#select {
+  position: absolute;
+  top: 80%;
+  width: 100%;
+  border-radius: 2px;
+}
+#cancel {
+  position: absolute;
+  left: 44%;
+  padding: 8px 12px;
+  border-radius: 5px;
+  color: #555;
+}
+#cancel:hover {
+  transition-duration: 250ms;
+  background-color: #EEEEEE;
+}
+#decide {
+  position: absolute;
+  left: 76%;
+  padding: 8px 16px;
+  border-radius: 3px;
+  color: #FFF;
+}
+#update-time {
+  position: absolute;
+  top: 39.5%;
+  left: 14%;
+  width: 75%;
+  height: 15%;
+}
+
+.update-period {
+    position: absolute;
+    width: 120px;
+    border: none;
+    box-sizing: none;
+    outline: none;
+    border-bottom: 1.5px solid #EEEEEE;
+    font-size: 10px;
+    color: #777;
+    caret-color: #2C7CFF;
+    padding: 9px;
+    border-radius: 2px;
+  }
+  .update-period:hover {
+    transition-duration: 250ms;
+    background-color: #EEEEEE;
+  }
+  .update-period:focus {
+    transition-duration: 500ms;
+    border-bottom: 1.5px solid #4689FF;
+  }
+#update-start {
+    left: 0;
+    width: 46%;
+}
+ #update-end {
+    left: 53%;
+    width: 46%;
+  }
+#update-separator {
+    position: absolute;
+    left: 51%;
+    top: 5px;
+    font-size: 17px;
+    color: #888;
+    z-index: 99;
+}
+#dot-update {
+  position: absolute;
+  top: 30%;
+  left: -8.9%;
+}
+#option {
+  position: absolute;
+  width: 30%;
+  top: 58%;
+  left: 57.4%;
+  border: none;
+  box-sizing: none;
+  outline: none;
+  border-bottom: 1.5px solid #EEEEEE;
+  font-size: 13px;
+  color: #777;
+  padding: 9px;
+  border-radius: 2px;
+}
+/* 修正フォームバリデーション */
+#update-caution {
+  position: absolute;
+  width: 60%;
+  font-size: 12px;
+  top: 55%;
+  left: -5%;
+}
+#update-caution ul {
+  color: #FF3333;
+  list-style: none;
 }
 
 .shared {

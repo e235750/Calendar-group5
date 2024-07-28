@@ -7,8 +7,6 @@ from cryptography.fernet import Fernet
 from flask_app import db
 from flask_app.models import SharedSchedule, NoneSharedSchedule
 
-
-
 index_bp = Blueprint('index', __name__, url_prefix='/')
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 cipher_suite = Fernet(ENCRYPTION_KEY)
@@ -107,20 +105,86 @@ def get_add_form():
             """
     return jsonify({"html": html})
 
+#スケジュールIDに合致するスケジュールを削除する
+@index_bp.route("delete_schedule", methods=["GET"])
+def delete_schedule():
+    schedule_id = request.args.get("schedule_id", type=int)
+    shared_option = request.args.get("shared_option", type=int)
+
+    #スケジュールの取得
+    if(shared_option):
+        target = db.session.query(SharedSchedule).filter(SharedSchedule.schedule_id == schedule_id).first()
+    else:
+        target = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
+    
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify({"response": "スケジュール削除完了"})
+
+#修正フォームHTMLを渡す
+@index_bp.route("/get_update_form", methods=["GET"])
+def get_update_form():
+    html = """
+            <div id="update-time">
+                <span class="dot shared" id="dot-update"></span>
+                <input type="datetime-local" class="update-period" id="update-start" min="2023-04-01T00:00" max="2027-03-31T23:59">
+                <span id="update-separator">–</span>
+                <input type="datetime-local" class="update-period" id="update-end" min="2023-04-01T00:00" max="2027-03-31T23:59">
+            </div>
+            <div id="option">
+                共有設定：<span id="update-shared-option">共有</span>
+            </div>
+            <div id="update-caution">
+                <ul>
+                    <li id="length-caution">・文字数は100文字以内である必要があります</li>
+                    <li id="period-caution">・予定日を正しく追加してください</li>
+                    <li id="title-caution">・タイトルを追加してください</li>
+                </ul>
+            </div>
+            <div id="select">
+                <div id="cancel">キャンセル</div>
+                <div id="decide" class="shared">確定</div>
+            </div>
+            """
+
+    return jsonify({"html": html})
+
+#スケジュールIDに合致するスケジュールの修正
+@index_bp.route("/update_schedule", methods=["POST"])
+def update_schedule():
+    data = request.get_json()
+    create_data = create_schedule_data(data)
+    shared_option = data["shared_option"]
+    schedule_id = data["schedule_id"]
+    print(data["added_date"])
+    if(shared_option):
+        target = db.session.query(SharedSchedule).filter(SharedSchedule.schedule_id == schedule_id).first()
+    else:
+        target = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
+
+    target.title = data["title"]
+    target.start_time = create_data["start_time_dt"]
+    target.end_time = create_data["end_time_dt"]
+    target.added_date = create_data["added_date_dt"]
+
+    # データベースに反映
+    db.session.commit()
+    return jsonify({"response": "修正完了"})
 #詳細HTMLを渡す
 @index_bp.route("/get_detail", methods=["GET"])
 def get_detail():
     html =  """
             <div class="detail show">
-                <div class="tab drag-and-drop shared">
+                <div class="tab drag-and-drop ">
                     <span id="detail-back">×</span>
                 </div>
                 <div id="detail-title">
-                    <span class="dot shared" id="dot-title"></span>
+                    <span class="dot " id="dot-title"></span>
                     <input type="text" id="detail-data" value="" disabled>
                 </div>
                 <div id="detail-time">
-                    <span class="dot shared" id="dot-period"></span>
+                    <span class="dot " id="dot-period"></span>
                     <div class="detail-period" id="detail-start">
                         <span id="detail-year"></span>-<span id="detail-month"></span>-<span id="detail-day"></span> 
                         <span id="detail-hour"></span>:<span id="detail-minute"></span>
@@ -137,7 +201,7 @@ def get_detail():
                 </div>
                 <div id="select">
                     <div id="update">修正</div>
-                    <div id="delete" class="shared">削除</div>
+                    <div id="delete" class="">削除</div>
                 </div>
             </div>
             """
@@ -273,23 +337,6 @@ def get_daily_schedule():
         schedule = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
     response = create_response(schedule, shared_option)
     return jsonify({"response": response})
-
-#スケジュールIDに合致するスケジュールを削除する
-@index_bp.route("delete_schedule", methods=["GET"])
-def delete_schedule():
-    schedule_id = request.args.get("schedule_id", type=int)
-    shared_option = request.args.get("shared_option", type=int)
-
-    #スケジュールの取得
-    if(shared_option):
-        target = db.session.query(SharedSchedule).filter(SharedSchedule.schedule_id == schedule_id).first()
-    else:
-        target = db.session.query(NoneSharedSchedule).filter(NoneSharedSchedule.schedule_id == schedule_id).first()
-    
-    db.session.delete(target)
-    db.session.commit()
-
-    return jsonify({"response": "スケジュール削除完了"})
 
 @index_bp.route("/", methods=["GET", "POST"])
 def index():

@@ -333,27 +333,10 @@ function setAddForm(event) {
     });
 }
 
-//スケジュールデータの送信
-function postScheduleData(data, shared) {
-    let url;
-    if(shared) url = "/set_shared_schedule";
-    else url = "/set_none_shared_schedule";
-
-    const options = {
-        method: "POST",
-        headers: {
-            "Content-type": "application/json"
-        },
-        body: JSON.stringify(data),
-    };
-
-    fetch(url, options)
-    .then(response => {
-        if(!response.ok) {
-            throw new Error("Error", response.statusText)
-        }
-        return response.json();
-    })
+//スケジュールIDに合致するスケジュールの削除
+function deleteSchedule(scheduleID, sharedOption) {
+    fetch(`/delete_schedule?schedule_id=${scheduleID}&shared_option=${sharedOption}`)
+    .then(response => response.json())
     .then(data => {
         console.log("Success", data.response)
     })
@@ -362,21 +345,164 @@ function postScheduleData(data, shared) {
     })
 }
 
-//指定年月の共有スケジュール情報を取得
-function getMonthlySchedule(year, month) {
-    return fetch(`/get_monthly_schedule?year=${year}&month=${month}`)
+//スケジュールIDに合致するスケジュールの修正
+function updateSchedule(event) {
+    fetch("/get_update_form")
     .then(response => response.json())
     .then(data => {
-        return data.response
-    })
-    .catch(error => {
-        console.error("Error", error)
-        throw error
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(data.html, "text/html");
+        let updateForm = doc.body.childNodes;
+        const update = document.querySelector(".detail");
+        update.querySelector("#detail-data").disabled = false;
+        update.querySelector("#detail-time").remove();
+        update.querySelector("#added-time").remove();
+        update.querySelector("#select").remove();
+        updateForm.forEach((elm) => {
+            update.insertAdjacentElement("beforeend", elm);
+        })
+        //共有、非共有クラス設定
+        if(event.target.value) {
+            update.querySelector(".tab").classList.remove("none-shared");
+            update.querySelector("#dot-title").classList.remove("none-shared");
+            update.querySelector("#dot-update").classList.remove("none-shared");
+            update.querySelector("#decide").classList.remove("none-shared");
+            update.querySelector(".tab").classList.add("shared");
+            update.querySelector("#dot-title").classList.add("shared");
+            update.querySelector("#dot-update").classList.add("shared");
+            update.querySelector("#decide").classList.add("shared");
+            update.querySelector("#update-shared-option").textContent = "　共有";
+        }
+        else {
+            update.querySelector(".tab").classList.remove("shared");
+            update.querySelector("#dot-title").classList.remove("shared");
+            update.querySelector("#dot-update").classList.remove("shared");
+            update.querySelector("#decide").classList.remove("shared");
+            update.querySelector(".tab").classList.add("none-shared");
+            update.querySelector("#dot-title").classList.add("none-shared");
+            update.querySelector("#dot-update").classList.add("none-shared");
+            update.querySelector("#decide").classList.add("none-shared");
+            update.querySelector("#update-shared-option").textContent = "非共有";
+        }
+
+        const start = document.querySelector("#update-start");
+        const end = document.querySelector("#update-end");
+
+        //start(end)よりも後(前)の日時を設定できないようにする
+        start.addEventListener("change", () => {
+            const startDate = new Date(start.value);
+
+            if(!isNaN(startDate.getTime())) {
+                end.min = start.value;
+            }
+        })
+        end.addEventListener("change", () => {
+            const endDate = new Date(end.value);
+
+            if(!isNaN(endDate.getTime())) {
+                start.max = end.value;
+            }
+        })
+
+        function backToDetail() {
+            const rect = update.getBoundingClientRect();
+            const curY = rect.top;
+            const curX = rect.left;
+            update.remove();
+            setDetail(event, curY, curX);
+        }
+
+        //キャンセル時の詳細消去 
+        update.querySelector("#cancel").addEventListener("click", () => {
+            backToDetail();
+        });
+
+        //修正内容の確定
+        update.querySelector("#decide").addEventListener("click", () => {
+            const title = document.querySelector("#detail-data");
+            const date = new Date();
+            let caution = false;
+            
+            //タイトルの長さ検証
+            if(title.value.length === 0) {
+                document.querySelector("#title-caution").style.display = "block";
+                caution = true;
+            }
+            else {
+                document.querySelector("#title-caution").style.display = "none";
+            }
+            if(title.value.length > 100) {
+                document.querySelector("#length-caution").style.display = "block";
+                const slicedStr = title.value.slice(0, 100);
+                title.value = slicedStr;
+                caution = true;
+            }
+            else {
+                document.querySelector("#length-caution").style.display = "none";
+            }
+            //期間設定の有無を検証
+            if(checkPeriod(start.value) && checkPeriod(end.value)) {
+                document.querySelector("#period-caution").style.display = "none";
+            }
+            else {
+                document.querySelector("#period-caution").style.display = "block";
+                caution = true; 
+            }
+            if(caution) return;
+            
+            const titleText = title.value;
+            periodS = splitDateTime(start.value);
+            periodE = splitDateTime(end.value);
+            
+            const scheduleData = {
+                "title": titleText,
+                "shared_option": event.target.value,
+                "schedule_id": Number(event.target.id),
+                "start_time": periodS,
+                "end_time": periodE,
+                "added_date": {
+                                "year": date.getFullYear(),
+                                "month": date.getMonth() + 1,
+                                "day":  date.getDate(),
+                                "hour": date.getHours(),
+                                "minute": date.getMinutes(),
+                            },
+            }
+            postUpdataSchedule(scheduleData)
+            backToDetail();
+            year = document.querySelector("#year").textContent;
+            month = document.querySelector("#month").textContent;
+            return setCalendar(Number(year), Number(month))
+        })
     });
 }
 
+//修正用スケジュールデータの送信
+function postUpdataSchedule(data) {
+    const url = "update_schedule";
+    const option = {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+        },
+        body: JSON.stringify(data)
+    }
+    return fetch(url, option)
+    .then(response => {
+        if(!response.ok) {
+            throw new Error("Error", response.statusText)
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Success", data.response);
+    })
+    .catch(error => {
+        console.log("Error", error);
+    })
+}
 //詳細セット
-function setDetail(event) {
+function setDetail(event, y, x) {
     let curX = event.pageX;
     let curY = event.pageY;
     const margin = 35;
@@ -400,17 +526,23 @@ function setDetail(event) {
         document.body.insertAdjacentElement("afterbegin", detailHTML);
         const detail =  document.querySelector(".detail")
 
-        //詳細が画面外に出ないようにする
-        if(curX < detail.clientWidth+margin) {
-            curX += margin;
+        if(y != undefined && x != undefined) {
+            detail.style.top = `${y}px`;
+            detail.style.left = `${x}px`;
         }
         else {
-            curX -= detail.clientWidth + margin;
+            //詳細が画面外に出ないようにする
+            if(curX < detail.clientWidth+margin) {
+                curX += margin;
+            }
+            else {
+                curX -= detail.clientWidth + margin;
+            }
+            //詳細の位置
+            curY -= detail.clientHeight/2;
+            detail.style.top = `${curY}px`;
+            detail.style.left = `${curX}px`;
         }
-        //詳細の位置
-        curY -= detail.clientHeight/2;
-        detail.style.top = `${curY}px`;
-        detail.style.left = `${curX}px`;
 
         //キャンセル時の詳細消去 
         detail.querySelector("#detail-back").addEventListener("click", () => {
@@ -422,6 +554,10 @@ function setDetail(event) {
                 elm.style.pointerEvents = "auto";
             });
         });
+
+        //修正フォームセット
+        const update = detail.querySelector("#update");
+        update.addEventListener("click", () => {updateSchedule(event)})
 
         const detailDelete = detail.querySelector("#delete")
         detailDelete.addEventListener("click", () => {
@@ -514,6 +650,49 @@ function setDetail(event) {
     })
 }
 
+//スケジュールデータの送信
+function postScheduleData(data, sharedOption) {
+    let url;
+    if(sharedOption) url = "/set_shared_schedule";
+    else url = "/set_none_shared_schedule";
+
+    const options = {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify(data),
+    };
+
+    fetch(url, options)
+    .then(response => {
+        if(!response.ok) {
+            throw new Error("Error", response.statusText)
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Success", data.response)
+    })
+    .catch(error => {
+        console.error("Error", error);
+    })
+}
+
+//指定年月の共有スケジュール情報を取得
+function getMonthlySchedule(year, month) {
+    return fetch(`/get_monthly_schedule?year=${year}&month=${month}`)
+    .then(response => response.json())
+    .then(data => {
+        return data.response
+    })
+    .catch(error => {
+        console.error("Error", error)
+        throw error
+    });
+}
+
+//スケジュールID合致するスケジュールを取得する
 function getDailySchedule(scheduleID, sharedOption) {
     return fetch(`/get_daily_schedule?schedule_id=${scheduleID}&shared_option=${sharedOption}`)
     .then(response => response.json())
@@ -572,18 +751,6 @@ function dragAndDrop() {
     }
 }
 
-//スケジュールIDに合致するスケジュールの削除
-function deleteSchedule(scheduleID, sharedOption) {
-    fetch(`/delete_schedule?schedule_id=${scheduleID}&shared_option=${sharedOption}`)
-    .then(response => response.json())
-    .then(data => {
-        console.log("Success", data.response)
-    })
-    .catch(error => {
-        console.error("Error", error);
-    })
-}
-
 //引数はYY-MM-DDThh:mm形式
 function splitDateTime(dateTime) {
     const [date, time] = dateTime.split("T");
@@ -592,6 +759,7 @@ function splitDateTime(dateTime) {
 
     return {"year": year, "month": month, "day": day, "hour": hour, "minute": minute};
 }
+
 function checkPeriod(period) {
     const reg = new RegExp("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
     if(period == "" || reg.test(period) == -1) return false;
