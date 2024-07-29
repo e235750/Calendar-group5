@@ -111,6 +111,9 @@ function setCalendar(year, month) {
                     li.classList.add("none-shared");
                     li.value = 0;
                 }
+                if(!elm["modifiable"]) {
+                    li.classList.add("not-modifiable")
+                }
                 li.id = elm["schedule_id"];
                 let titleText = elm.title;
                 if(titleText.length > 6) {
@@ -274,6 +277,18 @@ function setAddForm(event) {
 
         const start = document.querySelector("#start");
         const end = document.querySelector("#end");
+
+        //startの初期値をクリックした日に設定
+        {
+            const now = new Date();
+            yearD = String(document.querySelector("#year").textContent);
+            monthD = String(document.querySelector("#month").textContent).padStart(2, '0');
+            tdID = event.target.parentNode.id
+            dayD = String(tdID.split('-')[1]).padStart(2, '0');
+            hourD = String(now.getHours()).padStart(2, '0');
+            minuteD = String(now.getMinutes()).padStart(2, '0');
+            start.value = `${yearD}-${monthD}-${dayD}T${hourD}:${minuteD}`;
+        }
 
         //start(end)よりも後(前)の日時を設定できないようにする
         start.addEventListener("change", () => {
@@ -657,6 +672,17 @@ function setDetail(event, y, x) {
             detail.querySelector("#dot-period").classList.add("none-shared");
             detail.querySelector("#delete").classList.add("none-shared");
         }
+        //修正可能か
+        if(event.target.classList.contains("not-modifiable")) {
+            detail.querySelector(".tab").classList.add("not-modifiable");
+            detail.querySelector("#dot-title").classList.add("not-modifiable");
+            detail.querySelector("#dot-period").classList.add("not-modifiable");
+            detail.querySelector("#delete").classList.add("not-modifiable");
+
+            //修正、削除ボタンを削除
+            detail.querySelector("#update").remove();
+            detail.querySelector("#delete").remove();
+        }
         title.value = scheduleData["title"]
         //期間、追加日設定
         {
@@ -744,6 +770,11 @@ function setScheduleList(event) {
                     let listHTML = doc.body.firstChild;
                     ul.insertAdjacentElement("beforeend", listHTML);
                     const item = ul.querySelector(`[id='${elm.id}']`);
+                    if(elm.classList.contains("not-modifiable")) {
+                        item.querySelector(".list-dot").classList.add("not-modifiable");
+                        item.querySelector("#list-data").classList.add("not-modifiable");
+                        item.classList.add("not-modifiable");
+                    }
                     //詳細表示のイベントリスナー
                     item.addEventListener("click", () => {
                         const rect = list.getBoundingClientRect();
@@ -807,6 +838,7 @@ function setScheduleList(event) {
     });
 }
 
+//スケジュールliを取得　
 function getListHTML(scheduleID, sharedOption, title) {
     return fetch(`get_list_html?schedule_id=${scheduleID}&shared_option=${sharedOption}&title=${title}`)
     .then(response => response.json())
@@ -874,6 +906,19 @@ function getDailySchedule(scheduleID, sharedOption) {
     });
 }
 
+// function getDefaultSchedule() {
+//     return fetch("/get_default_schedule")
+//     .then(response => response.json())
+//     .then(data => {
+//         const schedules = data.response;
+//         return schedules
+//     })
+//     .catch(error => {
+//         console.log("Error", error)
+//         throw error
+//     })
+// }
+
 //フォームのドラッグ&ドロップを可能にする
 function dragAndDrop() {
     const tab = document.querySelector(".drag-and-drop");
@@ -929,6 +974,7 @@ function splitDateTime(dateTime) {
     return {"year": year, "month": month, "day": day, "hour": hour, "minute": minute};
 }
 
+// 期間が正しく設定されているか
 function checkPeriod(period) {
     const reg = new RegExp("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
     if(period == "" || reg.test(period) == -1) return false;

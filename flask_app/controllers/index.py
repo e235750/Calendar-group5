@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify, session
+from cryptography.fernet import Fernet
+from flask_app import db
+from flask_app.models import SharedSchedule, NoneSharedSchedule
 import calendar
 import datetime
 import os
 import uuid
-from cryptography.fernet import Fernet
-from flask_app import db
-from flask_app.models import SharedSchedule, NoneSharedSchedule
+
+from flask_app.controllers.scraping import scraping
 
 index_bp = Blueprint('index', __name__, url_prefix='/')
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
@@ -155,7 +157,7 @@ def get_update_form():
 def get_schedule_list():
     html = """
             <div class="schedule-form show">
-                <div class="tab drag-and-drop shared">
+                <div class="tab drag-and-drop not-modifiable">
                 <span id="list">スケジュールリスト</span>
                     <span id="back">×</span>
                 </div>
@@ -168,13 +170,14 @@ def get_schedule_list():
                     <div id="none-shared-num"><span>非共有：</span><span id="none-shared-num-value"></span></div>
                 </div>
                 <div id="select">
-                    <div id="list-back" class="shared">戻る</div>
+                    <div id="list-back" class="not-modifiable">戻る</div>
                 </div>
             </div>
             """
     
     return jsonify({"html": html})
 
+#liHTMLを渡す
 @index_bp.route("/get_list_html", methods=["GET"])
 def get_list_html():
     shared_option = request.args.get("shared_option", type=str)
@@ -184,7 +187,7 @@ def get_list_html():
         option = "shared"
     else:
         option = "none-shared"
-    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><div class="{option}">{title}</div></li>'
+    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><div id="list-data" class="{option}">{title}</div></li>'
     return jsonify({"html": html})
 
 #スケジュールIDに合致するスケジュールの修正
@@ -276,6 +279,7 @@ def set_shared_schedule():
 
     schedule = SharedSchedule(
         title = data["title"],
+        modifiable = 1,
         start_time = created_data["start_time_dt"],
         end_time = created_data["end_time_dt"],
         added_date = created_data["added_date_dt"],
@@ -296,6 +300,7 @@ def set_none_shared_schedule():
 
     schedule = NoneSharedSchedule(
         title = data["title"],
+        modifiable = 1,
         user_id = encrypted_user_id,
         start_time = created_data["start_time_dt"],
         end_time = created_data["end_time_dt"],
@@ -317,6 +322,7 @@ def date_split(datetime):
 #レスポンスの作成(JSに渡すよう)
 def create_response(schedule, shared_optoin):
         response = {
+            "modifiable": schedule.modifiable,
             "shared_option": shared_optoin,
             "schedule_id": schedule.schedule_id,
             "title"     : schedule.title,
@@ -376,11 +382,34 @@ def get_daily_schedule():
     response = create_response(schedule, shared_option)
     return jsonify({"response": response})
 
+#デフォルトのスケジュール(琉大学年歴)を取得
+@index_bp.route("/get_default_schedule", methods=["GET"])
+def get_default_schedule():
+    schedule_row = scraping.extract_schedule()
+    schedules = scraping.create_schedule(schedule_row)
+
+    return jsonify({"response": schedules})
+
 @index_bp.route("/", methods=["GET", "POST"])
 def index():
     #ユーザーIDがない場合は作成する
     if "user_id" not in session or not session["user_id"]:
         session["user_id"] = str(uuid.uuid4())
         session.permanent = True
+    if "extracted" not in session or not session["extracted"] or not session["extracted"]:
+        schedule_row = scraping.extract_schedule()
+        schedules = scraping.create_schedule(schedule_row)
+        for schedule in schedules:
+            created_data = create_schedule_data(schedule)
+            schedule = SharedSchedule(
+                modifiable = 0,
+                title = schedule["title"],
+                start_time = created_data["start_time_dt"],
+                end_time = created_data["end_time_dt"],
+                added_date = created_data["added_date_dt"],
+            )
+            db.session.add(schedule)
+        db.session.commit()
+        session["extracted"] = 1
 
     return render_template("index.html")

@@ -678,11 +678,15 @@ border-radius: 2px;
   height: 10px;
   border-radius: 2px;
 }
+#schedule-list li {
+  width: 93.5%;
+  margin: 3px 0;
+  border-radius: 5px
+}
 #schedule-list li div {
   color: white;
   width: 88.2%;
   padding: 5px 8px;
-  margin: 3px 0;
   border-radius: 5px;
 }
 
@@ -729,4 +733,8 @@ border-radius: 2px;
 .none-shared {
   transition-duration: 250ms;
   background-color: #FF82B2;
+}
+.not-modifiable {
+  transition-duration: 250ms;
+  background-color: #C299FF;
 }
