@@ -187,7 +187,7 @@ def get_list_html():
         option = "shared"
     else:
         option = "none-shared"
-    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><div id="list-data" class="{option}">{title}</div></li>'
+    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><span id="cover"><input type="text" id="list-data" class="{option}" value="{title}" disabled=""></span></li>'
     return jsonify({"html": html})
 
 #スケジュールIDに合致するスケジュールの修正

@@ -10,6 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
     month.textContent = nowMonth;
     setCalendar(nowYear, nowMonth);
 
+    const yearMin = 2023;
+    const yearMax = 2027;
+    const monthMin = 4;
+    const monthMax = 3;
+
     //月遷移
     document.querySelector("#last-month").addEventListener("click", () => {
         let currentYear = document.querySelector("#year").textContent;
@@ -25,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
         else {
             lastMonth = currentMonth - 1;
             lastYear = currentYear;
+        }
+        if(lastYear == yearMin && lastMonth + 1 == monthMin) {
+            lastMonth = monthMin;
         }
 
         const calendar = document.querySelector(".calendar");
@@ -60,6 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
         else {
             nextMonth = currentMonth + 1;
             nextYear = currentYear;
+        }
+        //次の月が設定可能な年月以内か
+        if(nextYear == yearMax && nextMonth - 1 == monthMax) {
+            nextMonth = monthMax;
         }
 
         const calendar = document.querySelector(".calendar");
@@ -791,7 +803,23 @@ function setScheduleList(event) {
                             elm.style.pointerEvents = "none";
                         });
                         const event = {"target": item}
-                        console.log(curY, curX)
+                        setDetail(event, curY, curX)
+                    })
+                    item.querySelector("#list-data").addEventListener("click", () => {
+                        const rect = list.getBoundingClientRect();
+                        curY = rect.top;
+                        curX = rect.left;
+                        list.remove();
+                        document.querySelectorAll(".schedule").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        document.querySelectorAll(".add").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        document.querySelectorAll(".date-num").forEach((elm) => {
+                            elm.style.pointerEvents = "none";
+                        });
+                        const event = {"target": item}
                         setDetail(event, curY, curX)
                     })
                 })
@@ -905,19 +933,6 @@ function getDailySchedule(scheduleID, sharedOption) {
         throw error
     });
 }
-
-// function getDefaultSchedule() {
-//     return fetch("/get_default_schedule")
-//     .then(response => response.json())
-//     .then(data => {
-//         const schedules = data.response;
-//         return schedules
-//     })
-//     .catch(error => {
-//         console.log("Error", error)
-//         throw error
-//     })
-// }
 
 //フォームのドラッグ&ドロップを可能にする
 function dragAndDrop() {
