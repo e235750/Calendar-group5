@@ -443,20 +443,20 @@ def index():
     if "user_id" not in session or not session["user_id"]:
         session["user_id"] = str(uuid.uuid4())
         session.permanent = True
-    if "extracted" not in session or not session["extracted"] or not session["extracted"]:
-        schedule_row = scraping.extract_schedule()
-        schedules = scraping.create_schedule(schedule_row)
-        for schedule in schedules:
-            created_data = create_schedule_data(schedule)
-            schedule = SharedSchedule(
-                modifiable = 0,
-                title = schedule["title"],
-                start_time = created_data["start_time_dt"],
-                end_time = created_data["end_time_dt"],
-                added_date = created_data["added_date_dt"],
-            )
-            db.session.add(schedule)
-        db.session.commit()
-        session["extracted"] = 1
+    # if "extracted" not in session or not session["extracted"] or not session["extracted"]:
+    #     schedule_row = scraping.extract_schedule()
+    #     schedules = scraping.create_schedule(schedule_row)
+    #     for schedule in schedules:
+    #         created_data = create_schedule_data(schedule)
+    #         schedule = SharedSchedule(
+    #             modifiable = 0,
+    #             title = schedule["title"],
+    #             start_time = created_data["start_time_dt"],
+    #             end_time = created_data["end_time_dt"],
+    #             added_date = created_data["added_date_dt"],
+    #         )
+    #         db.session.add(schedule)
+    #     db.session.commit()
+    #     session["extracted"] = 1
 
     return render_template("index.html")
