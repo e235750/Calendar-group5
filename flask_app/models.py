@@ -13,12 +13,8 @@ class NoneSharedSchedule(db.Model):
     __tablename__ = "none_shared_schedule"
     schedule_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     modifiable = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.String(255), db.ForeignKey("user.user_id"), nullable=False)
+    user_id = db.Column(db.String(255), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     added_date = db.Column(db.DateTime, nullable=False)
-
-class User(db.Model):
-    __tablename__ = "user"
-    user_id = db.Column(db.String(255), primary_key=True)

@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     year.textContent = nowYear;
     month.textContent = nowMonth;
     setCalendar(nowYear, nowMonth);
+    setLocalNav()
 
     const yearMin = 2023;
     const yearMax = 2027;
@@ -174,6 +175,59 @@ function setCalendar(year, month) {
     .catch(error => {
         console.error("Error", error)
     });
+}
+
+function setLocalNav() {
+    const ul = document.querySelector("#schedule-ul")
+
+    getOnPeriodSchedule()
+    .then(schedules => {
+        return schedules
+    })
+    .then(schedules => {
+        schedules.forEach(schedule => {
+            let li;
+            getSharedScheduleli(schedule["schedule_id"])
+            .then(html => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, "text/html");
+                let listHTML = doc.body.firstChild;
+                ul.insertAdjacentElement("beforeend", listHTML);
+
+                const item = ul.querySelector(`[id='${schedule["schedule_id"]}']`);
+
+                item.querySelector("#schedule-title-input").value = schedule["title"];
+                //開始時間
+                {
+                    startTime = item.querySelector(".schedule-start");
+                    startTimeDt = schedule["start_time"];
+                    monthS = String(startTimeDt["month"]);
+                    dayS = String(startTimeDt["day"]);
+                    hourS = String(startTimeDt["hour"]);
+                    minuteS = String(startTimeDt["minute"]);
+                    startTime.querySelector(".schedule-year").textContent = startTimeDt["year"];
+                    startTime.querySelector(".schedule-month").textContent = monthS.padStart(2, '0');
+                    startTime.querySelector(".schedule-day").textContent = dayS.padStart(2, '0');
+                    startTime.querySelector(".schedule-hour").textContent = hourS.padStart(2, '0');
+                    startTime.querySelector(".schedule-minute").textContent = minuteS.padStart(2, '0');
+                }
+                //終了時間
+                {
+                    endTime = item.querySelector(".schedule-end");
+                    endTimeDt = schedule["end_time"];
+                    monthS = String(endTimeDt["month"]);
+                    dayS = String(endTimeDt["day"]);
+                    hourS = String(endTimeDt["hour"]);
+                    minuteS = String(endTimeDt["minute"]);
+                    endTime.querySelector(".schedule-year").textContent = endTimeDt["year"];
+                    endTime.querySelector(".schedule-month").textContent = monthS.padStart(2, '0');
+                    endTime.querySelector(".schedule-day").textContent = dayS.padStart(2, '0');
+                    endTime.querySelector(".schedule-hour").textContent = hourS.padStart(2, '0');
+                    endTime.querySelector(".schedule-minute").textContent = minuteS.padStart(2, '0');
+                }
+            })
+        })
+    })
 }
 
 //追加フォームセット
@@ -721,7 +775,7 @@ function setDetail(event, y, x) {
     });
 }
 
-//スケジュールリストの表示
+//スケジュールリストセット
 function setScheduleList(event) {
     let curX = event.pageX;
     let curY = event.pageY;
@@ -775,6 +829,7 @@ function setScheduleList(event) {
             else noneSharedNum ++;
             const promise = getDailySchedule(elm.id, elm.value)
                 .then(response => {
+                    console.log(elm.id, elm.value)
                     return getListHTML(elm.id, elm.value, response.title);
                 })
                 .then(html => {
@@ -787,25 +842,9 @@ function setScheduleList(event) {
                         item.querySelector("#list-data").classList.add("not-modifiable");
                         item.classList.add("not-modifiable");
                     }
+
                     //詳細表示のイベントリスナー
                     item.addEventListener("click", () => {
-                        const rect = list.getBoundingClientRect();
-                        curY = rect.top;
-                        curX = rect.left;
-                        list.remove();
-                        document.querySelectorAll(".schedule").forEach((elm) => {
-                            elm.style.pointerEvents = "none";
-                        });
-                        document.querySelectorAll(".add").forEach((elm) => {
-                            elm.style.pointerEvents = "none";
-                        });
-                        document.querySelectorAll(".date-num").forEach((elm) => {
-                            elm.style.pointerEvents = "none";
-                        });
-                        const event = {"target": item}
-                        setDetail(event, curY, curX)
-                    })
-                    item.querySelector("#list-data").addEventListener("click", () => {
                         const rect = list.getBoundingClientRect();
                         curY = rect.top;
                         curX = rect.left;
@@ -877,6 +916,31 @@ function getListHTML(scheduleID, sharedOption, title) {
         console.log("Error", error)
         throw error
     })
+}
+
+//共有スケジュールliを取得(ローカルナビゲーション用)
+function getSharedScheduleli(scheduleID) {
+    return fetch(`/get_shered_schedule_li?schedule_id=${scheduleID}`)
+    .then(response => response.json())
+    .then(data => {
+        return data.html
+    })
+    .catch(error => {
+        console.log("Error", error)
+        throw error
+    })
+}
+
+function getOnPeriodSchedule() {
+    return fetch("/get_on_period_schedule")
+    .then(response => response.json())
+    .then(data => {
+        return data.response
+    })
+    .catch(error => {
+        console.error("Error", error)
+        throw error
+    });
 }
 
 //スケジュールデータの送信

@@ -107,6 +107,35 @@ def get_add_form():
             """
     return jsonify({"html": html})
 
+#共有スケジュールliを渡す
+@index_bp.route("get_shered_schedule_li", methods=["GET"])
+def get_shered_schedule_li():
+    schedule_id = request.args.get("schedule_id", type=int)
+    html = f"""
+            <li id="{schedule_id}">
+                <div class="list-contents">
+                    <div class="schedule-tab"></div>
+                    <div class="schedule-title">
+                        <div class="schedule-dot title-dot"></div>
+                        <div class="schedule_id"></div>
+                        <input type="text" id="schedule-title-input" value="" readonly>
+                    </div>
+                    <div class="schedule-time">
+                        <div class="time-dot schedule-dot"></div>
+                        <div class="schedule-period schedule-start">
+                            <span class="schedule-year"></span>-<span class="schedule-month"></span>-<span class="schedule-day"></span>
+                            <span class="schedule-hour"></span>:<span class="schedule-minute"></span>
+                        </div>
+                        <span class="schedule-separator">–</span>
+                        <div class="schedule-period schedule-end">
+                            <span class="schedule-year"></span>-<span class="schedule-month"></span>-<span class="schedule-day"></span>
+                            <span class="schedule-hour"></span>:<span class="schedule-minute"></span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            """
+    return jsonify({"html": html})
 #スケジュールIDに合致するスケジュールを削除する
 @index_bp.route("delete_schedule", methods=["GET"])
 def delete_schedule():
@@ -157,7 +186,7 @@ def get_update_form():
 def get_schedule_list():
     html = """
             <div class="schedule-form show">
-                <div class="tab drag-and-drop not-modifiable">
+                <div class="tab drag-and-drop shared">
                 <span id="list">スケジュールリスト</span>
                     <span id="back">×</span>
                 </div>
@@ -170,7 +199,7 @@ def get_schedule_list():
                     <div id="none-shared-num"><span>非共有：</span><span id="none-shared-num-value"></span></div>
                 </div>
                 <div id="select">
-                    <div id="list-back" class="not-modifiable">戻る</div>
+                    <div id="list-back" class="shared">戻る</div>
                 </div>
             </div>
             """
@@ -180,14 +209,14 @@ def get_schedule_list():
 #liHTMLを渡す
 @index_bp.route("/get_list_html", methods=["GET"])
 def get_list_html():
-    shared_option = request.args.get("shared_option", type=str)
+    shared_option = request.args.get("shared_option", type=int)
     schedule_id = request.args.get("schedule_id", type=str)
     title = request.args.get("title", type=str)
     if(shared_option):
         option = "shared"
     else:
         option = "none-shared"
-    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><span id="cover"><input type="text" id="list-data" class="{option}" value="{title}" disabled=""></span></li>'
+    html = f'<li class="item" id="{schedule_id}", value="{shared_option}"><span class="list-dot {option}"></span><input type="text" id="list-data" class="{option}" value="{title}" readonly></li>'
     return jsonify({"html": html})
 
 #スケジュールIDに合致するスケジュールの修正
@@ -345,7 +374,7 @@ def get_monthly_schedule():
     month_end = datetime.datetime(year, month, day=calendar.monthrange(year, month)[1], hour=23, minute=59, second=59)
     for schedule in schedules:
         start_time_dt = date_split(str(schedule.start_time))
-        end_time_dt = date_split(str(schedule.start_time))
+        end_time_dt = date_split(str(schedule.end_time))
         start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
         end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
         #まるまる入っている、前月をまたぐ、後月をまたぐ、前月・後月をまたぐ
@@ -362,12 +391,30 @@ def get_monthly_schedule():
             schedules.append(schedule)
     for schedule in schedules:
         start_time_dt = date_split(str(schedule.start_time))
-        end_time_dt = date_split(str(schedule.start_time))
+        end_time_dt = date_split(str(schedule.end_time))
         start_time = datetime.datetime(start_time_dt["year"], start_time_dt["month"], start_time_dt["day"], start_time_dt["hour"], start_time_dt["minute"])
         end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
         #まるまる入っている、前月をまたぐ、後月をまたぐ
         if (month_start <= start_time and end_time <= month_end) or (start_time < month_start and end_time <= month_end) or (month_start <= start_time and month_end < end_time):
             response.append(create_response(schedule, 0))
+    return jsonify({"response": response})
+
+@index_bp.route("get_on_period_schedule", methods=["GET"])
+def get_on_period_schedule():
+    response = []
+    now = datetime.datetime.now()
+
+    #共有スケジュール
+    schedules = db.session.query(SharedSchedule).all()
+    for schedule in schedules:
+        end_time_dt = date_split(str(schedule.end_time))
+        end_time = datetime.datetime(end_time_dt["year"], end_time_dt["month"], end_time_dt["day"], end_time_dt["hour"], end_time_dt["minute"])
+        #まるまる入っている、前月をまたぐ、後月をまたぐ、前月・後月をまたぐ
+        if now <= end_time:
+            response.append(create_response(schedule, 1))
+    
+    response = sorted(response, key=lambda res: datetime.datetime(res["start_time"]["year"], res["start_time"]["month"], res["start_time"]["day"], res["start_time"]["hour"], res["start_time"]["minute"]))
+    print(response)
     return jsonify({"response": response})
 
 #スケジュールIDに合致するスケジュールを取得する
